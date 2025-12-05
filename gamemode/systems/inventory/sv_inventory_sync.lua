@@ -1,0 +1,4 @@
+   -- local function PlayerInit(ply)
+     --   netstream.Start(ply, "dbt.Sync.items", dbt.inventory.items)
+   -- end
+   -- hook.Add("PlayerInitialSpawn", "dbt.ply.sunc.itm", PlayerInit)
