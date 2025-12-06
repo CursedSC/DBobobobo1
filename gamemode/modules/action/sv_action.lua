@@ -251,17 +251,17 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
     
     local distance = sender:GetPos():Distance(target:GetPos())
     if distance > 150 then
-        netstream.Start(sender, 'dbt/NewNotification', 1, {
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
             icon = 'materials/dbt/notifications/notifications_main.png', 
-            title = 'Ошибка', 
-            titlecolor = Color(215, 63, 65), 
+            title = 'Уведомление', 
+            titlecolor = Color(222, 193, 49), 
             notiftext = 'Цель слишком далеко!'
         })
         return
     end
     
     if not sender.items or not sender.items[position] then
-        netstream.Start(sender, 'dbt/NewNotification', 1, {
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
             icon = 'materials/dbt/notifications/notifications_main.png', 
             title = 'Ошибка', 
             titlecolor = Color(215, 63, 65), 
@@ -272,7 +272,7 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
     
     local item = sender.items[position]
     if item.id ~= itemId then
-        netstream.Start(sender, 'dbt/NewNotification', 1, {
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
             icon = 'materials/dbt/notifications/notifications_main.png', 
             title = 'Ошибка', 
             titlecolor = Color(215, 63, 65), 
@@ -283,7 +283,7 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
     
     local itemData = dbt.inventory.items[itemId]
     if not itemData or not itemData.medicine then
-        netstream.Start(sender, 'dbt/NewNotification', 1, {
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
             icon = 'materials/dbt/notifications/notifications_main.png', 
             title = 'Ошибка', 
             titlecolor = Color(215, 63, 65), 
@@ -322,7 +322,7 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         timer.Remove("MedicationAnim_" .. sender:SteamID())
         
         if not IsValid(currentTarget) or not currentTarget:Alive() then
-            netstream.Start(sender, 'dbt/NewNotification', 1, {
+            netstream.Start(sender, 'dbt/NewNotification', 3, {
                 icon = 'materials/dbt/notifications/notifications_main.png', 
                 title = 'Ошибка', 
                 titlecolor = Color(215, 63, 65), 
@@ -335,7 +335,7 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         
         local dist = sender:GetPos():Distance(currentTarget:GetPos())
         if dist > 150 then
-            netstream.Start(sender, 'dbt/NewNotification', 1, {
+            netstream.Start(sender, 'dbt/NewNotification', 3, {
                 icon = 'materials/dbt/notifications/notifications_main.png', 
                 title = 'Ошибка', 
                 titlecolor = Color(215, 63, 65), 
@@ -351,7 +351,7 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         local effectiveness = math.Rand(0.5, 1.0)
         
         if effectiveness <= 0 then
-            netstream.Start(sender, 'dbt/NewNotification', 1, {
+            netstream.Start(sender, 'dbt/NewNotification', 3, {
                 icon = 'materials/dbt/notifications/notifications_main.png', 
                 title = 'Лечение', 
                 titlecolor = Color(215, 63, 65), 
@@ -372,29 +372,24 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         
         local resultMessage = ""
         local resultColor = Color(82, 204, 117)
-        local notifType = 3
         
         if success then
             if effectiveness >= 0.75 then
                 resultMessage = medData.itemData.name .. ' применён отлично! (100%)'
                 resultColor = Color(82, 204, 117)
-                notifType = 3
             elseif effectiveness >= 0.5 then
                 resultMessage = medData.itemData.name .. ' применён хорошо (75%)'
                 resultColor = Color(222, 193, 49)
-                notifType = 2
             else
                 resultMessage = medData.itemData.name .. ' применён удовлетворительно (50%)'
                 resultColor = Color(222, 193, 49)
-                notifType = 2
             end
         else
             resultMessage = medData.itemData.name .. ' не помог! Повторите процедуру.'
             resultColor = Color(234, 30, 33)
-            notifType = 1
         end
         
-        netstream.Start(sender, 'dbt/NewNotification', notifType, {
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
             icon = 'materials/icons/medical_chest.png', 
             title = 'Лечение', 
             titlecolor = resultColor, 
@@ -402,7 +397,7 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         })
         
         if currentTarget ~= sender then
-            netstream.Start(currentTarget, 'dbt/NewNotification', notifType, {
+            netstream.Start(currentTarget, 'dbt/NewNotification', 3, {
                 icon = 'materials/icons/medical_chest.png', 
                 title = 'Лечение', 
                 titlecolor = resultColor, 
