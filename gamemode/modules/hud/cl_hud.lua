@@ -351,7 +351,9 @@ function dbt.ShowTimerTarget(seconds, name, target, callback, cancelCallback)
                 hook.Remove("HUDPaint", "TargetTimer")
                 timer.Remove("TargetTimer")
                 netstream.Start("dbt/player/stopsound")
-                if cancelCallback then cancelCallback() end
+                if isfunction(cancelCallback) then
+                    cancelCallback()
+                end
                 return
             end
             local ang = 360 - (timer.TimeLeft("TargetTimer") / seconds) * 360
