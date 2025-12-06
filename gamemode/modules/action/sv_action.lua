@@ -30,6 +30,75 @@ function GetTimeRemainingText(endTime)
     end
 end
 
+function CreateParalysisRagdoll(ply)
+    if not IsValid(ply) or not ply:Alive() then return end
+    
+    local ragdoll = ents.Create("prop_ragdoll")
+    if not IsValid(ragdoll) then return end
+    
+    ragdoll:SetModel(ply:GetModel())
+    ragdoll:SetPos(ply:GetPos())
+    ragdoll:SetAngles(ply:GetAngles())
+    ragdoll:SetSkin(ply:GetSkin())
+    
+    for i = 0, ply:GetNumBodyGroups() - 1 do
+        ragdoll:SetBodygroup(i, ply:GetBodygroup(i))
+    end
+    
+    ragdoll:Spawn()
+    ragdoll:Activate()
+    
+    ragdoll:SetNWEntity("owner", ply)
+    ragdoll:SetCollisionGroup(COLLISION_GROUP_WEAPON)
+    
+    local velocity = ply:GetVelocity()
+    for i = 0, ragdoll:GetPhysicsObjectCount() - 1 do
+        local phys = ragdoll:GetPhysicsObjectNum(i)
+        if IsValid(phys) then
+            local boneIndex = ragdoll:TranslatePhysBoneToBone(i)
+            local boneMatrix = ply:GetBoneMatrix(boneIndex)
+            
+            if boneMatrix then
+                phys:SetPos(boneMatrix:GetTranslation())
+                phys:SetAngles(boneMatrix:GetAngles())
+            end
+            
+            phys:SetVelocity(velocity)
+        end
+    end
+    
+    ply:Spectate(OBS_MODE_CHASE)
+    ply:SpectateEntity(ragdoll)
+    ply:StripWeapons()
+    ply:SetMoveType(MOVETYPE_OBSERVER)
+    ply:SetNoDraw(true)
+    
+    ply.dbt_ParalysisRagdoll = ragdoll
+    
+    return ragdoll
+end
+
+function RemoveParalysisRagdoll(ply)
+    if not IsValid(ply) then return end
+    
+    local ragdoll = ply.dbt_ParalysisRagdoll
+    if IsValid(ragdoll) then
+        local pos = ragdoll:GetPos()
+        local ang = ragdoll:GetAngles()
+        
+        ply:SetPos(pos + Vector(0, 0, 10))
+        ply:SetAngles(Angle(0, ang.y, 0))
+        
+        ragdoll:Remove()
+        ply.dbt_ParalysisRagdoll = nil
+    end
+    
+    ply:UnSpectate()
+    ply:SetMoveType(MOVETYPE_WALK)
+    ply:SetNoDraw(false)
+    ply:Spawn()
+end
+
 function GetParalyzedPlayerInfo(target)
     if not IsValid(target) then return nil end
     
