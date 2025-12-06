@@ -311,6 +311,37 @@ local function GetPlayerMedications()
     return meds
 end
 
+local function BuildDirectApplicationWheel()
+    local target = MedicationState.TargetPlayer or LocalPlayer()
+    local selectedMed = MedicationState.SelectedMedication
+    
+    local directTable = {}
+    directTable[1] = {
+        name = "Назад",
+        mat = http.Material("https://imgur.com/lszTmGe.png"),
+        func = function()
+            BuildMedicationsWheel()
+        end
+    }
+    
+    directTable[2] = {
+        name = "Применить",
+        mat = Material("icons/medical_poison.png"),
+        func = function()
+            net.Start("dbt.ApplyTranquilizer")
+                net.WriteEntity(target)
+                net.WriteUInt(selectedMed.id, 16)
+                net.WriteUInt(selectedMed.position or 0, 16)
+            net.SendToServer()
+            
+            MedicationState.SelectedMedication = nil
+            MedicationState.TargetPlayer = nil
+        end
+    }
+    
+    NewWheel(directTable)
+end
+
 local function BuildBodyPartsWheel()
     local bodyPartsTable = {}
     bodyPartsTable[1] = {
@@ -383,7 +414,12 @@ function BuildMedicationsWheel()
                     mat = med.data.icon or Material("icons/medical_chest.png"),
                     func = function()
                         MedicationState.SelectedMedication = med
-                        BuildBodyPartsWheel()
+                        
+                        if MedicationState.SelectedCategory.directApplication then
+                            BuildDirectApplicationWheel()
+                        else
+                            BuildBodyPartsWheel()
+                        end
                     end
                 }
                 idx = idx + 1
@@ -410,22 +446,26 @@ function BuildMedicationCategoriesWheel()
         {
             name = "Лечение ранений",
             items = {31, 34, 37},
-            icon = Material("icons/medical_plaster.png")
+            icon = Material("icons/medical_plaster.png"),
+            directApplication = false
         },
         {
             name = "Лечение переломов",
             items = {32},
-            icon = Material("icons/151.png")
+            icon = Material("icons/151.png"),
+            directApplication = false
         },
         {
             name = "Лечение ушибов",
             items = {33},
-            icon = Material("icons/medical_antiseptic_cream.png")
+            icon = Material("icons/medical_antiseptic_cream.png"),
+            directApplication = false
         },
         {
-            name = "Спецпрепараты",
-            items = {42, 43},
-            icon = Material("icons/medical_poison.png")
+            name = "Транквилизаторы",
+            items = {44, 45},
+            icon = Material("icons/medical_poison.png"),
+            directApplication = true
         }
     }
     
