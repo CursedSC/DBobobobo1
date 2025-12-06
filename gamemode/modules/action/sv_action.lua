@@ -350,51 +350,58 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         
         local effectiveness = math.Rand(0.5, 1.0)
         
+        if effectiveness <= 0 then
+            netstream.Start(sender, 'dbt/NewNotification', 3, {
+                icon = 'materials/dbt/notifications/notifications_main.png', 
+                title = 'Лечение', 
+                titlecolor = Color(215, 63, 65), 
+                notiftext = 'Процедура провалена! Медикамент потрачен.'
+            })
+            sender.dbt_MedicationTarget = nil
+            sender.dbt_MedicationData = nil
+            return
+        end
+        
         local success = false
         if medData.itemData.OnUse then
-            medData.itemData.OnUse(currentTarget, medData.itemData, {}, {position = medData.position, bodyPart = medData.bodyPart, effectiveness = effectiveness})
+            medData.itemData.OnUse(currentTarget, medData.itemData, item.meta or {}, {position = medData.position, bodyPart = medData.bodyPart, effectiveness = effectiveness})
             success = true
         elseif medData.itemData.medicine then
             success = dbt.UseMedicaments(currentTarget, medData.itemData.medicine, medData.bodyPart, effectiveness)
         end
         
-        local notifType = 3
         local resultMessage = ""
         local resultColor = Color(82, 204, 117)
         
         if success then
-            if effectiveness >= 0.85 then
-                notifType = 3
-                resultMessage = medData.itemData.name .. ' применён отлично! Эффективность: 100%'
+            if effectiveness >= 0.75 then
+                resultMessage = medData.itemData.name .. ' применён отлично! (100%)'
                 resultColor = Color(82, 204, 117)
-            elseif effectiveness >= 0.65 then
-                notifType = 2
-                resultMessage = medData.itemData.name .. ' применён хорошо. Эффективность: 75%'
+            elseif effectiveness >= 0.5 then
+                resultMessage = medData.itemData.name .. ' применён хорошо (75%)'
                 resultColor = Color(222, 193, 49)
             else
-                notifType = 2
-                resultMessage = medData.itemData.name .. ' применён удовлетворительно. Эффективность: 50%'
+                resultMessage = medData.itemData.name .. ' применён удовлетворительно (50%)'
                 resultColor = Color(222, 193, 49)
             end
         else
-            notifType = 1
-            resultMessage = medData.itemData.name .. ' не помог! Рана не излечена.'
+            resultMessage = medData.itemData.name .. ' не помог! Повторите процедуру.'
             resultColor = Color(234, 30, 33)
         end
         
-        netstream.Start(sender, 'dbt/NewNotification', notifType, {
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
             icon = 'materials/icons/medical_chest.png', 
-            title = 'Результат лечения', 
+            title = 'Лечение', 
             titlecolor = resultColor, 
             notiftext = resultMessage
         })
         
         if currentTarget ~= sender then
-            netstream.Start(currentTarget, 'dbt/NewNotification', notifType, {
+            netstream.Start(currentTarget, 'dbt/NewNotification', 3, {
                 icon = 'materials/icons/medical_chest.png', 
-                title = 'Вас лечат', 
+                title = 'Лечение', 
                 titlecolor = resultColor, 
-                notiftext = sender:Nick() .. ': ' .. resultMessage
+                notiftext = sender:Nick() .. ' применил: ' .. resultMessage
             })
         end
         
@@ -411,8 +418,7 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
                 target = currentTarget:Nick(),
                 body_part = medData.bodyPart,
                 effectiveness = effectiveness,
-                success = success,
-                notification_type = notifType
+                success = success
             })
         end
         
