@@ -112,7 +112,6 @@ dbt.effects = {
 	bleeding = function(ply)
 		if not ply:IsValid() or not ply:Alive() then return end
 
-		-- Создаем частицы крови
 		local effectdata = EffectData()
 		effectdata:SetOrigin(ply:GetPos() + Vector(0, 0, 50))
 		effectdata:SetNormal(Vector(0, 0, -1))
@@ -120,14 +119,12 @@ dbt.effects = {
 		effectdata:SetScale(1)
 		util.Effect("BloodImpact", effectdata)
 
-		-- Создаем декаль крови на полу
 		dbt.CreateBloodDecal(ply)
 	end,
 
 	hardbleeding = function(ply)
 		if not ply:IsValid() or not ply:Alive() then return end
 
-		-- Создаем более интенсивные частицы крови
 		local effectdata = EffectData()
 		effectdata:SetOrigin(ply:GetPos() + Vector(0, 0, 50))
 		effectdata:SetNormal(Vector(0, 0, -1))
@@ -135,12 +132,10 @@ dbt.effects = {
 		effectdata:SetScale(2)
 		util.Effect("BloodImpact", effectdata)
 
-		-- Создаем более крупную декаль крови на полу
 		dbt.CreateBloodDecal(ply, true)
 	end,
 }
 
--- Функция для создания декалей крови на полу
 function dbt.CreateBloodDecal(ply, isHeavy)
 	if not ply:IsValid() then return end
 
@@ -162,10 +157,8 @@ function dbt.CreateBloodDecal(ply, isHeavy)
 
 		local decalName = bloodDecals[math.random(1, #bloodDecals)]
 
-		-- Создаем постоянную декаль для всех игроков
 		util.Decal(decalName, trace.HitPos + trace.HitNormal, trace.HitPos - trace.HitNormal, ply)
 
-		-- Дополнительно создаем несколько маленьких капель вокруг основной декали
 		for i = 1, math.random(2, 4) do
 			local randomPos = trace.HitPos + Vector(
 				math.random(-decalSize, decalSize),
@@ -263,7 +256,6 @@ function dbt.setWound(ply, wound, position, vector)
 		if !dbt.hasWoundOnpos(ply, wound, position) then table.insert(dbt.PlayersWounds[ply][position], {wound, vector}) end
 
 		if wound == "Ушиб" and dbt.hasWound(ply, "Ушиб") then
-			--table.insert(ply.CharWoundStatus[position], wound)
 			local countbruis = table.Count(table.KeysFromValue(dbt.PlayersWounds[ply][position], "Ушиб"))
 
 			if countbruis > 1 then
@@ -277,7 +269,6 @@ function dbt.setWound(ply, wound, position, vector)
 				end
 			end
 		elseif wound == "Ранение" and dbt.hasWound(ply, "Ранение") then
-			--table.insert(ply.CharWoundStatus[position], wound)
 			local countwound = table.Count(table.KeysFromValue(dbt.PlayersWounds[ply][position], "Ранение"))
 			if countwound > 1 then
 				local chance = math.Clamp(countwound*30, 0, 100)
@@ -292,6 +283,15 @@ function dbt.setWound(ply, wound, position, vector)
 	netstream.Start(ply, "dbt/woundsystem/cl_getwound", dbt.PlayersWounds[ply])
 	netstream.Start(ply, 'dbt/NewNotification', 1, {woundpos = position, wound = wound})
 	broadcastWoundState(ply)
+
+	if wound == "Парализован" and IsValid(ply) and ply:Alive() and not ply.isSpectating and not ply:GetNWBool("ragdolled", false) then
+		if startRagdoll then
+			startRagdoll(ply, {
+				initialDamage = 0,
+				cause = "paralysis",
+			})
+		end
+	end
 
 	openobserve.Log({
 		event = "wound_set",
@@ -354,7 +354,6 @@ local function DetectHitboxFromDamage(player, dmgpos)
 	local hitbox = "unknown"
 	local woundPosition = ""
 
-	-- Get all bones and find the closest one to damage position
 	for i = 0, player:GetBoneCount() - 1 do
 		local bonePos, boneAng = player:GetBonePosition(i)
 		if bonePos then
@@ -367,19 +366,15 @@ local function DetectHitboxFromDamage(player, dmgpos)
 		end
 	end
 
-	-- Map bone to hitbox regions and wound positions
 	if closestBone then
 		local boneName = player:GetBoneName(closestBone):lower()
 
-		-- Head hitbox
 		if string.find(boneName, "head") or string.find(boneName, "neck") or string.find(boneName, "skull") then
 			hitbox = "head"
 			woundPosition = dbt.woundsposition.head
-		-- Chest/torso hitbox
 		elseif string.find(boneName, "spine") or string.find(boneName, "chest") or string.find(boneName, "ribcage") then
 			hitbox = "chest"
 			woundPosition = dbt.woundsposition.chest
-		-- Arm hitboxes
 		elseif string.find(boneName, "arm") or string.find(boneName, "hand") or string.find(boneName, "finger") or string.find(boneName, "shoulder") or string.find(boneName, "forearm") or string.find(boneName, "upperarm") then
 			if string.find(boneName, "_l_") or string.find(boneName, "left") then
 				hitbox = "left_arm"
@@ -389,9 +384,8 @@ local function DetectHitboxFromDamage(player, dmgpos)
 				woundPosition = dbt.woundsposition.rightarm
 			else
 				hitbox = "arm"
-				woundPosition = dbt.woundsposition.leftarm -- Default to left arm
+				woundPosition = dbt.woundsposition.leftarm
 			end
-		-- Leg hitboxes
 		elseif string.find(boneName, "leg") or string.find(boneName, "foot") or string.find(boneName, "toe") or string.find(boneName, "thigh") or string.find(boneName, "calf") or string.find(boneName, "knee") then
 			if string.find(boneName, "_l_") or string.find(boneName, "left") then
 				hitbox = "left_leg"
@@ -401,9 +395,8 @@ local function DetectHitboxFromDamage(player, dmgpos)
 				woundPosition = dbt.woundsposition.rightleg
 			else
 				hitbox = "leg"
-				woundPosition = dbt.woundsposition.leftleg -- Default to left leg
+				woundPosition = dbt.woundsposition.leftleg
 			end
-		-- Pelvis/stomach
 		elseif string.find(boneName, "pelvis") or string.find(boneName, "hip") then
 			hitbox = "stomach"
 			woundPosition = dbt.woundsposition.chest
@@ -440,9 +433,8 @@ hook.Add("EntityTakeDamage", "dbt/woundsystem/setwound1", function(target, dmgin
 
     if target:IsPlayer() then
 		local hitgroup = target:LastHitGroup()
-		local finalWoundPos = detectedWoundPos or dbt.woundsposition.chest -- Use detected position or fallback to chest
+		local finalWoundPos = detectedWoundPos or dbt.woundsposition.chest
 
-		-- Use bone detection when possible, fallback to hitgroup detection
 		local useBoneDetection = detectedWoundPos and detectedWoundPos ~= ""
 
 		if damagetype == DMG_FALL then
@@ -457,7 +449,6 @@ hook.Add("EntityTakeDamage", "dbt/woundsystem/setwound1", function(target, dmgin
 				if useBoneDetection then
 				dbt.setWound(target, dbt.woundstypes.bulletwound, finalWoundPos, woundPos)
 			else
-				-- Fallback to hitgroup detection
 				if hitgroup == HITGROUP_HEAD then
 		            dbt.setWound(target, dbt.woundstypes.bulletwound, dbt.woundsposition.head, woundPos)
 				elseif hitgroup == HITGROUP_CHEST or hitgroup == HITGROUP_STOMACH then
@@ -476,7 +467,6 @@ hook.Add("EntityTakeDamage", "dbt/woundsystem/setwound1", function(target, dmgin
 			if useBoneDetection then
 				dbt.setWound(target, dbt.woundstypes.bruises, finalWoundPos, woundPos)
 			else
-				-- Fallback to hitgroup detection
 				if hitgroup == HITGROUP_HEAD then
 		            dbt.setWound(target, dbt.woundstypes.bruises, dbt.woundsposition.head, woundPos)
 				elseif hitgroup == HITGROUP_CHEST or hitgroup == HITGROUP_STOMACH then
@@ -495,7 +485,6 @@ hook.Add("EntityTakeDamage", "dbt/woundsystem/setwound1", function(target, dmgin
 			if useBoneDetection then
 				dbt.setWound(target, dbt.woundstypes.wound, finalWoundPos, woundPos)
 			else
-				-- Fallback to hitgroup detection
 				if hitgroup == HITGROUP_HEAD then
 		            dbt.setWound(target, dbt.woundstypes.wound, dbt.woundsposition.head, woundPos)
 				elseif hitgroup == HITGROUP_CHEST or hitgroup == HITGROUP_STOMACH then
@@ -663,54 +652,3 @@ netstream.Hook("dbt/woundsystem/setwound", function(admin, ply, woundType, posit
 		end
 	end
 end)
-
-
-/*hook.Add("PlayerTick", "effectstatus",function (ply)
-	if ply:hasWound("Ранение") or ply:hasWound("Тяжелое ранение") or ply:hasWound("Пулевое ранение") then
-		if ply:hasWound("Тяжелое ранение") then
-			local woundeffect = dbt.effects.hardbleeding
-			woundeffect(ply)
-		else
-			local woundeffect = dbt.effects.bleeding
-			woundeffect(ply)
-		end
-	end
-
-	if ply:hasWound("Перелом") then
-		local woundeffect = dbt.effects.fracture
-		woundeffect(ply)
-	end
-end)
-*/
-/*
-hook.Add("Tick", "effectstatus",function ()
-	for _, gameply in pairs(player.GetHumans()) do
-		if gameply:hasWound("Ранение") or gameply:hasWound("Тяжелое ранение") or gameply:hasWound("Пулевое ранение") then
-			if gameply:hasWound("Тяжелое ранение") then
-				local woundeffect = dbt.effects.hardbleeding(gameply)
-			else
-				local woundeffect = dbt.effects.bleeding(gameply)
-			end
-		end
-
-		if gameply:hasWound("Перелом") then
-			local woundeffect = dbt.effects.fracture(gameply)
-		end
-	end
-end)
-*/
-/*concommand.Add("TickManual", function(ply)
-	for _, gameply in pairs(player.GetHumans()) do
-		if gameply:hasWound("Ранение") or gameply:hasWound("Тяжелое ранение") or gameply:hasWound("Пулевое ранение") then
-			if gameply:hasWound("Тяжелое ранение") then
-				local woundeffect = dbt.effects.hardbleeding(gameply)
-			else
-				local woundeffect = dbt.effects.bleeding(gameply)
-			end
-		end
-		if gameply:hasWound("Перелом") then
-			local woundeffect = dbt.effects.fracture(gameply)
-		end
-	end
-end)
-*/
