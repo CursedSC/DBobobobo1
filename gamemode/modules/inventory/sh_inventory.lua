@@ -750,10 +750,19 @@ dbt.inventory.items[42] = {
 		if IsValid(ply) and ply:Alive() and !ply.isSpectating and !dbt.hasWound(ply, "Парализован") then
 	        startRagdoll(ply)
 			dbt.setWound(ply, "Парализован", "Туловище", Vector(0, 0, 0))
+			
+			ply.dbt_InjectionData = {
+				type = "weak",
+				drug = "Слабый транквилизатор",
+				bodyPart = c_data.bodyPart or "Туловище",
+				time = CurTime(),
+				duration = 300
+			}
 
 			timer.Create(ply:SteamID().."/paralysed", 300, 1, function()
 				if IsValid(ply) then
 					dbt.removeWound(ply, "Парализован", "Туловище")
+					ply.dbt_InjectionData = nil
 					restoreFromRagdoll(ply, {
 						setPosition = true,
 					})
@@ -783,10 +792,19 @@ dbt.inventory.items[43] = {
 		if IsValid(ply) and ply:Alive() and !ply.isSpectating and !dbt.hasWound(ply, "Парализован") then
 	        startRagdoll(ply)
 			dbt.setWound(ply, "Парализован", "Туловище", Vector(0, 0, 0))
+			
+			ply.dbt_InjectionData = {
+				type = "strong",
+				drug = "Сильный транквилизатор",
+				bodyPart = c_data.bodyPart or "Туловище",
+				time = CurTime(),
+				duration = 1200
+			}
 
 			timer.Create(ply:SteamID().."/paralysed", 1200, 1, function()
 				if IsValid(ply) then
 					dbt.removeWound(ply, "Парализован", "Туловище")
+					ply.dbt_InjectionData = nil
 					restoreFromRagdoll(ply, {
 						setPosition = true,
 					})
