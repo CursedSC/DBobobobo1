@@ -17,7 +17,7 @@ local col4 = Color(126, 78, 148)
 local WoundTypesRu = {
     ["Ушиб"] = "Ушиб",
     ["Ранение"] = "Лёгкое ранение",
-    ["Тяжелое ранение"] = "Тяжелое ранение",
+    ["Тяжелое ранение"] = "Тяжёлое ранение",
     ["Пулевое ранение"] = "Пулевое ранение",
     ["Перелом"] = "Перелом",
     ["Парализован"] = "Парализован"
@@ -36,69 +36,79 @@ netstream.Hook("dbt/wounds/settings_sync", function(settings)
     DBT_WoundsSettings = settings
 end)
 
+local woundOrder = {
+    "Ушиб",
+    "Ранение",
+    "Тяжелое ранение",
+    "Пулевое ранение",
+    "Перелом",
+    "Парализован"
+}
+
 dbt.AdminFunc["wounds_manage"] = {
     name = "Управление ранениями",
     build = function(frame)
-        local w, h = frame:GetWide(), frame:GetTall()
+        local yPos = hight_source(82, 1080)
+        local checkboxHeight = hight_source(48, 1080)
+        local spacing = hight_source(63, 1080)
         
-        local mainPanel = vgui.Create("DPanel", frame)
-        mainPanel:SetPos(weight_source(45, 1920), hight_source(77, 1080))
-        mainPanel:SetSize(weight_source(1350, 1920), hight_source(520, 1080))
-        mainPanel.Paint = function(self, w, h)
-            draw.RoundedBox(8, 0, 0, w, h, monobuttons_1)
-        end
-        
-        local yPos = hight_source(20, 1080)
-        local checkboxHeight = hight_source(55, 1080)
-        
-        for woundKey, woundName in pairs(WoundTypesRu) do
-            local woundPanel = vgui.Create("DPanel", mainPanel)
-            woundPanel:SetPos(weight_source(20, 1920), yPos)
-            woundPanel:SetSize(weight_source(1310, 1920), checkboxHeight)
-            woundPanel.Paint = function(self, w, h)
-                draw.RoundedBox(6, 0, 0, w, h, Color(0, 0, 0, 100))
-                
-                local textColor = DBT_WoundsSettings[woundKey] and Color(100, 255, 100) or Color(255, 100, 100)
-                draw.DrawText(woundName, "RobotoLight_32", w * 0.02, h * 0.25, textColor, TEXT_ALIGN_LEFT)
-                
-                local statusText = DBT_WoundsSettings[woundKey] and "ВКЛЮЧЕНО" or "ВЫКЛЮЧЕНО"
-                local statusColor = DBT_WoundsSettings[woundKey] and Color(100, 255, 100) or Color(255, 100, 100)
-                draw.DrawText(statusText, "DermaLarge", w * 0.7, h * 0.3, statusColor, TEXT_ALIGN_LEFT)
+        for _, woundKey in ipairs(woundOrder) do
+            local woundName = WoundTypesRu[woundKey]
+            
+            local container = vgui.Create("EditablePanel", frame)
+            container:SetPos(weight_source(20, 1920), yPos)
+            container:SetSize(weight_source(1310, 1920), checkboxHeight)
+            
+            container.Paint = function(self, w, h)
+                draw.RoundedBox(4, 0, 0, w, h, monobuttons_1)
+                draw.SimpleText(woundName, "RobotoLight_32", h + 15, h * 0.5, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
             end
             
-            local toggleBtn = vgui.Create("DButton", woundPanel)
-            toggleBtn:SetPos(weight_source(1050, 1920), hight_source(7.5, 1080))
-            toggleBtn:SetSize(weight_source(240, 1920), hight_source(40, 1080))
-            toggleBtn:SetText("")
-            toggleBtn.Paint = function(self, w, h)
-                local isEnabled = DBT_WoundsSettings[woundKey]
-                local baseColor = isEnabled and Color(50, 150, 50) or Color(150, 50, 50)
-                local hoverColor = isEnabled and Color(70, 180, 70) or Color(180, 70, 70)
-                local col = self:IsHovered() and hoverColor or baseColor
+            local check_b = vgui.Create("DButton", container)
+            check_b:SetPos(0, 0)
+            check_b:SetSize(checkboxHeight, checkboxHeight)
+            check_b:SetText("")
+            check_b.checked = DBT_WoundsSettings[woundKey]
+            
+            check_b.Paint = function(self, w, h)
+                draw.RoundedBox(4, 0, 0, w, h, monobuttons_1)
                 
-                draw.RoundedBox(6, 0, 0, w, h, col)
-                
-                local btnText = isEnabled and "ВЫКЛЮЧИТЬ" or "ВКЛЮЧИТЬ"
-                draw.DrawText(btnText, "DermaDefault", w / 2, h * 0.25, color_white, TEXT_ALIGN_CENTER)
+                if self.checked then
+                    surface.SetDrawColor(255, 255, 255, 255)
+                    local checkSize = h * 0.6
+                    local margin = (h - checkSize) / 2
+                    
+                    draw.RoundedBox(2, margin, margin, checkSize, checkSize, Color(143, 37, 156, 180))
+                    
+                    surface.SetDrawColor(255, 255, 255, 255)
+                    local x1, y1 = margin + checkSize * 0.2, margin + checkSize * 0.5
+                    local x2, y2 = margin + checkSize * 0.4, margin + checkSize * 0.7
+                    local x3, y3 = margin + checkSize * 0.8, margin + checkSize * 0.3
+                    
+                    surface.DrawLine(x1, y1, x2, y2)
+                    surface.DrawLine(x2, y2, x3, y3)
+                end
             end
-            toggleBtn.DoClick = function()
-                DBT_WoundsSettings[woundKey] = not DBT_WoundsSettings[woundKey]
+            
+            check_b.DoClick = function(self)
+                self.checked = not self.checked
+                DBT_WoundsSettings[woundKey] = self.checked
                 
                 net.Start("admin.ToggleWound")
                     net.WriteString(woundKey)
-                    net.WriteBool(DBT_WoundsSettings[woundKey])
+                    net.WriteBool(self.checked)
                 net.SendToServer()
             end
             
-            yPos = yPos + checkboxHeight + hight_source(10, 1080)
+            yPos = yPos + spacing
         end
         
-        local infoLabel = vgui.Create("DLabel", mainPanel)
+        local infoLabel = vgui.Create("DLabel", frame)
         infoLabel:SetPos(weight_source(20, 1920), yPos + hight_source(20, 1080))
-        infoLabel:SetSize(weight_source(1310, 1920), hight_source(50, 1080))
-        infoLabel:SetFont("DermaDefault")
+        infoLabel:SetSize(weight_source(1310, 1920), hight_source(100, 1080))
+        infoLabel:SetFont("RobotoLight_26")
         infoLabel:SetTextColor(Color(200, 200, 200))
-        infoLabel:SetText("Выключенные типы ранений не будут применяться к игрокам при получении урона.")
+        infoLabel:SetText("Выключенные типы ранений не будут применяться \nк игрокам при получении урона.")
         infoLabel:SetWrap(true)
     end,
     PaintAdv = function(self, w, h)
