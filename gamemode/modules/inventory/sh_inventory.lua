@@ -707,8 +707,6 @@ dbt.inventory.items[39] = {
     end
 }
 
--- Rotten food placeholder item (used when food/drink spoils)
--- ID 40 reserved and stable
 dbt.inventory.items[40] = {
     name = "Тухлятина",
     mdl = "models/props_junk/garbage_takeoutcarton001a.mdl",
@@ -753,7 +751,7 @@ dbt.inventory.items[42] = {
 	        startRagdoll(ply)
 			dbt.setWound(ply, "Парализован", "Туловище", Vector(0, 0, 0))
 
-			timer.Create(ply:SteamID().."/paralysed", 10,1,function () -- 5 минут поставить потом
+			timer.Create(ply:SteamID().."/paralysed", 300, 1, function()
 				if IsValid(ply) then
 					dbt.removeWound(ply, "Парализован", "Туловище")
 					restoreFromRagdoll(ply, {
@@ -767,10 +765,10 @@ dbt.inventory.items[42] = {
 	GetDescription = function(self)
         local text = {}
         text[#text+1] = color_white
-        text[#text+1] = "Интересно, какую СЛАБУЮ гадость можно с ним устроить?"
+        text[#text+1] = "Парализует цель на 5 минут, превращая её в регдолл."
         return text
     end,
-	descalt = {Color(175, 175, 175, 150), "Использование: ", true, "• Просто слабый транквилизатор"},
+	descalt = {Color(175, 175, 175, 150), "Использование: ", true, "• Применить через меню взаимодействия (E)"},
 }
 
 dbt.inventory.items[43] = {
@@ -786,7 +784,7 @@ dbt.inventory.items[43] = {
 	        startRagdoll(ply)
 			dbt.setWound(ply, "Парализован", "Туловище", Vector(0, 0, 0))
 
-			timer.Create(ply:SteamID().."/paralysed", 10,1,function () -- 15 минут потом поставить
+			timer.Create(ply:SteamID().."/paralysed", 1200, 1, function()
 				if IsValid(ply) then
 					dbt.removeWound(ply, "Парализован", "Туловище")
 					restoreFromRagdoll(ply, {
@@ -800,10 +798,10 @@ dbt.inventory.items[43] = {
 	GetDescription = function(self)
         local text = {}
         text[#text+1] = color_white
-        text[#text+1] = "Интересно, какую СИЛЬНУЮ гадость можно с ним устроить?"
+        text[#text+1] = "Парализует цель на 20 минут, превращая её в регдолл."
         return text
     end,
-	descalt = {Color(175, 175, 175, 150), "Использование: ", true, "• Просто сильный транквилизатор"},
+	descalt = {Color(175, 175, 175, 150), "Использование: ", true, "• Применить через меню взаимодействия (E)"},
 }
 
 for k, i in pairs(weapons.GetList()) do
