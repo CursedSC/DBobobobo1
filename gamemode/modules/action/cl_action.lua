@@ -581,19 +581,36 @@ net.Receive("dbt.ShowParalyzedInfo", function()
     end)
 end)
 
+local function IsRagdollParalyzed(ragdoll)
+    if not IsValid(ragdoll) or ragdoll:GetClass() ~= "prop_ragdoll" then return false end
+    
+    local owner = ragdoll:GetNWEntity("dbt_RagdollOwner")
+    if not IsValid(owner) or not owner:IsPlayer() then return false end
+    
+    return dbt.hasWound and dbt.hasWound(owner, "Парализован")
+end
+
 hook.Add("HUDPaint", "dbt.ParalyzedPlayerCrosshairHint", function()
     local ply = LocalPlayer()
     if not IsValid(ply) or not ply:Alive() then return end
     
     local trace = ply:GetEyeTrace()
-    if not trace.Entity or not IsValid(trace.Entity) or not trace.Entity:IsPlayer() then return end
+    if not trace.Entity or not IsValid(trace.Entity) then return end
     
     local target = trace.Entity
     local distance = ply:GetPos():Distance(target:GetPos())
     
     if distance > 150 then return end
     
-    if dbt.hasWound and dbt.hasWound(target, "Парализован") then
+    local isParalyzed = false
+    
+    if target:IsPlayer() and dbt.hasWound and dbt.hasWound(target, "Парализован") then
+        isParalyzed = true
+    elseif IsRagdollParalyzed(target) then
+        isParalyzed = true
+    end
+    
+    if isParalyzed then
         local scrW, scrH = ScrW(), ScrH()
         local text = "Нажмите [E] чтобы осмотреть"
         
