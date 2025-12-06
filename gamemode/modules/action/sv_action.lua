@@ -260,7 +260,7 @@ net.Receive("dbt.ApplyMedication", function(len, sender)
         return
     end
     
-    netstream.Start(sender, 'dbt/NewNotification', 1, {
+    netstream.Start(sender, 'dbt/NewNotification', 3, {
         icon = 'materials/icons/medical_chest.png', 
         title = 'Лечение', 
         titlecolor = Color(82, 204, 117), 
@@ -287,7 +287,7 @@ net.Receive("dbt.ApplyMedication", function(len, sender)
                 dbt.inventory.removeitem(sender, position)
             end
             
-            netstream.Start(sender, 'dbt/NewNotification', 1, {
+            netstream.Start(sender, 'dbt/NewNotification', 3, {
                 icon = 'materials/icons/medical_chest.png', 
                 title = 'Лечение', 
                 titlecolor = Color(82, 204, 117), 
@@ -295,7 +295,7 @@ net.Receive("dbt.ApplyMedication", function(len, sender)
             })
             
             if target ~= sender then
-                netstream.Start(target, 'dbt/NewNotification', 1, {
+                netstream.Start(target, 'dbt/NewNotification', 3, {
                     icon = 'materials/icons/medical_chest.png', 
                     title = 'Лечение', 
                     titlecolor = Color(82, 204, 117), 
