@@ -5,6 +5,7 @@ util.AddNetworkString("UNSearchPlayer")
 util.AddNetworkString("dbt.TakePlayer")
 util.AddNetworkString("dbt.ApplyMedication")
 util.AddNetworkString("dbt.OpenMedicationMenu")
+util.AddNetworkString("dbt.StartMedicationMinigame")
 
 
 hook.Add("KeyPress","CheckOpenMenu",function(ply,key)
@@ -238,12 +239,35 @@ function dbt.UseMedicaments(ply, medicineType, bodyPart, effectiveness)
     return healed
 end
 
+net.Receive("dbt.StartMedicationMinigame", function(len, sender)
+    local target = net.ReadEntity()
+    
+    if not IsValid(sender) or not sender:Alive() then return end
+    if not IsValid(target) or not target:Alive() then return end
+    
+    sender:Freeze(true)
+    sender.dbt_IsMedicating = true
+    
+    timer.Create("dbt_MedicationFreeze_" .. sender:SteamID(), 10, 1, function()
+        if IsValid(sender) then
+            sender:Freeze(false)
+            sender.dbt_IsMedicating = false
+        end
+    end)
+end)
+
 net.Receive("dbt.ApplyMedication", function(len, sender)
     local target = net.ReadEntity()
     local itemId = net.ReadUInt(16)
     local bodyPart = net.ReadString()
     local position = net.ReadUInt(16)
     local effectiveness = net.ReadFloat()
+    
+    if IsValid(sender) then
+        sender:Freeze(false)
+        sender.dbt_IsMedicating = false
+        timer.Remove("dbt_MedicationFreeze_" .. sender:SteamID())
+    end
     
     if not IsValid(sender) or not sender:Alive() then return end
     if not IsValid(target) or not target:Alive() then return end
