@@ -3,11 +3,8 @@ util.AddNetworkString("PushPlayer")
 util.AddNetworkString("SearchPlayer")
 util.AddNetworkString("UNSearchPlayer")
 util.AddNetworkString("dbt.TakePlayer")
-util.AddNetworkString("dbt.ApplyMedication")
 util.AddNetworkString("dbt.OpenMedicationMenu")
 util.AddNetworkString("dbt.StartMedicationProcess")
-util.AddNetworkString("dbt.CancelMedicationProcess")
-util.AddNetworkString("dbt.ShowParalyzedInfo")
 
 hook.Add("KeyPress","CheckOpenMenu",function(ply,key)
       if ( key == IN_USE && ply:GetEyeTrace().Entity ) then
@@ -304,7 +301,6 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         itemData = itemData
     }
     
-    netstream.Start(sender, "dbt/medication/started", target)
     netstream.Start(nil, "dbt/change/sq/anim", sender, "gesture_item_place")
     
     timer.Create("MedicationAnim_" .. sender:SteamID(), 2, 2, function()
@@ -423,25 +419,6 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         sender.dbt_MedicationTarget = nil
         sender.dbt_MedicationData = nil
     end)
-end)
-
-net.Receive("dbt.CancelMedicationProcess", function(len, sender)
-    if not IsValid(sender) then return end
-    
-    sender:Freeze(false)
-    sender:StopSound('actions/search/search.mp3')
-    timer.Remove("dbt_MedicationProcess_" .. sender:SteamID())
-    timer.Remove("MedicationAnim_" .. sender:SteamID())
-    
-    sender.dbt_MedicationTarget = nil
-    sender.dbt_MedicationData = nil
-    
-    netstream.Start(sender, 'dbt/NewNotification', 2, {
-        icon = 'materials/dbt/notifications/notifications_main.png', 
-        title = 'Отменено', 
-        titlecolor = Color(222, 193, 49), 
-        notiftext = 'Применение медикамента отменено'
-    })
 end)
 
 hook.Add("PlayerButtonDown", "dbt.MedicationMenuKey", function(ply, button)
