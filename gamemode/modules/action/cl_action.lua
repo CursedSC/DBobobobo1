@@ -73,19 +73,18 @@ local BODY_PARTS = {
     {name = "Правая нога", hitgroup = "Праваянога"}
 }
 
-local function GetPlayerMedications(ply)
+local function GetPlayerMedications()
     local meds = {}
-    local inv = ply:GetInventory()
+    local inv = dbt.inventory.player or {}
     
-    if not inv then return meds end
-    
-    for _, item in pairs(inv) do
+    for k, item in pairs(inv) do
         if item and item.id and dbt.inventory.items[item.id] and dbt.inventory.items[item.id].medicine then
             table.insert(meds, {
                 id = item.id,
                 data = dbt.inventory.items[item.id],
                 meta = item.meta,
-                position = item.position
+                position = k,
+                slot = item.slot
             })
         end
     end
@@ -129,7 +128,7 @@ end
 function BuildMedicationsWheel()
     if not MedicationState.SelectedCategory then return end
     
-    local playerMeds = GetPlayerMedications(LocalPlayer())
+    local playerMeds = GetPlayerMedications()
     local medicationsTable = {}
     
     medicationsTable[1] = {
@@ -161,7 +160,7 @@ function BuildMedicationsWheel()
 end
 
 function BuildMedicationCategoriesWheel()
-    local playerMeds = GetPlayerMedications(LocalPlayer())
+    local playerMeds = GetPlayerMedications()
     local categoriesTable = {}
     
     categoriesTable[1] = {
