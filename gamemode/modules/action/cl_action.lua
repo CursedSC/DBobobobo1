@@ -68,7 +68,7 @@ local MedicationMinigame = {
     misses = 0,
     
     indicatorPos = 0,
-    indicatorSpeed = 0.03,
+    indicatorSpeed = 0.015,
     indicatorDirection = 1,
     
     targetZoneStart = 0.4,
@@ -102,7 +102,7 @@ function MedicationMinigame:Start(duration, rounds, callback, medData)
     self.misses = 0
     self.indicatorPos = 0
     self.indicatorDirection = 1
-    self.indicatorSpeed = 0.03
+    self.indicatorSpeed = 0.015
     self.callback = callback
     self.medicationData = medData
     self.lastHitTime = 0
@@ -138,7 +138,7 @@ function MedicationMinigame:CheckHit()
         self.lastHitTime = CurTime()
         self.feedback = "ОТЛИЧНО!"
         self.feedbackAlpha = 1
-        self.indicatorSpeed = self.indicatorSpeed + 0.005
+        self.indicatorSpeed = self.indicatorSpeed + 0.002
         
         surface.PlaySound("buttons/button14.wav")
         
