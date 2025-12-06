@@ -176,6 +176,79 @@ netstream.Hook("dbt/entire", function(ply, ent)
     ply:SetNWBool("HavePlayerArms", true)
 end)
 
+function dbt.UseMedicaments(ply, medicineType, bodyPart, effectiveness)
+    if not IsValid(ply) or not ply:Alive() then return false end
+    
+    effectiveness = effectiveness or 1
+    bodyPart = bodyPart or "Туловище"
+    
+    if not dbt or not dbt.removeWound then
+        return true
+    end
+    
+    local wounds = nil
+    if isfunction(ply.GetWounds) then
+        wounds = ply:GetWounds()
+    elseif istable(ply.wounds) then
+        wounds = ply.wounds
+    elseif dbt and dbt.getWounds then
+        wounds = dbt.getWounds(ply)
+    end
+    
+    if not wounds or not istable(wounds) then 
+        return true
+    end
+    
+    local healMap = {
+        ["Бинт"] = {"Лёгкоеранение", "Среднееранение"},
+        ["Хирургическийнабор"] = {"Тяжёлоеранение", "Пулевоеранение", "Среднееранение", "Лёгкоеранение"},
+        ["Шинадляпереломов"] = {"Перелом"},
+        ["Мазь"] = {"Ушиб"},
+        ["СлабыйТранквилизатор"] = {},
+        ["СильныйТранквилизатор"] = {},
+        ["Аптечка"] = {}
+    }
+    
+    local canHeal = healMap[medicineType]
+    if not canHeal then return true end
+    
+    local healed = false
+    
+    effectiveness = math.Clamp(effectiveness, 0, 1)
+    
+    if effectiveness >= 0.75 then
+        for woundType, _ in pairs(wounds) do
+            if table.HasValue(canHeal, woundType) and wounds[woundType][bodyPart] then
+                dbt.removeWound(ply, woundType, bodyPart)
+                healed = true
+                break
+            end
+        end
+    elseif effectiveness >= 0.5 then
+        if math.random() <= 0.75 then
+            for woundType, _ in pairs(wounds) do
+                if table.HasValue(canHeal, woundType) and wounds[woundType][bodyPart] then
+                    dbt.removeWound(ply, woundType, bodyPart)
+                    healed = true
+                    break
+                end
+            end
+        end
+    elseif effectiveness >= 0.25 then
+        if math.random() <= 0.5 then
+            for woundType, _ in pairs(wounds) do
+                if table.HasValue(canHeal, woundType) and wounds[woundType][bodyPart] then
+                    dbt.removeWound(ply, woundType, bodyPart)
+                    healed = true
+                    break
+                end
+            end
+        end
+    end
+    
+    return healed or true
+end
+
 net.Receive("dbt.StartMedicationProcess", function(len, sender)
     local target = net.ReadEntity()
     local itemId = net.ReadUInt(16)
@@ -303,6 +376,8 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         if medData.itemData.OnUse then
             medData.itemData.OnUse(currentTarget, medData.itemData, medData.item.meta or {}, {position = medData.position, bodyPart = medData.bodyPart, effectiveness = effectiveness})
             success = true
+        elseif medData.itemData.medicine then
+            success = dbt.UseMedicaments(currentTarget, medData.itemData.medicine, medData.bodyPart, effectiveness)
         end
         
         local resultMessage = ""
