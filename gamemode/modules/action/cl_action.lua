@@ -113,6 +113,10 @@ function MedicationMinigame:Start(duration, rounds, callback, medData)
     surface.PlaySound("player/heartbeat1.wav")
     
     gui.EnableScreenClicker(true)
+    
+    net.Start("dbt.StartMedicationMinigame")
+        net.WriteEntity(MedicationState.TargetPlayer or LocalPlayer())
+    net.SendToServer()
 end
 
 function MedicationMinigame:Stop(success)
@@ -239,7 +243,7 @@ hook.Add("HUDPaint", "MedicationMinigame.Draw", function()
     surface.SetDrawColor(255, 50, 50, 255)
     draw.RoundedBox(4, indicatorX - indicatorWidth / 2, barY - hight_source(10), indicatorWidth, barHeight + hight_source(20), Color(255, 50, 50, 255))
     
-    draw.SimpleText("Нажмите [ПРОБЕЛ] в зелёной зоне!", "Comfortaa X28", centerX + shakeX, centerY + hight_source(100) + shakeY, Color(255, 255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    draw.SimpleText("Нажмите [G] в зелёной зоне!", "Comfortaa X28", centerX + shakeX, centerY + hight_source(100) + shakeY, Color(255, 255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     
     if MedicationMinigame.feedbackAlpha > 0 then
         local feedbackColor = MedicationMinigame.feedback == "ОТЛИЧНО!" and Color(82, 204, 117, 255 * MedicationMinigame.feedbackAlpha) or Color(234, 30, 33, 255 * MedicationMinigame.feedbackAlpha)
@@ -264,7 +268,7 @@ end)
 hook.Add("PlayerButtonDown", "MedicationMinigame.Input", function(ply, button)
     if not MedicationMinigame.active then return end
     
-    if button == KEY_SPACE or button == MOUSE_LEFT then
+    if button == KEY_G then
         MedicationMinigame:CheckHit()
     end
 end)
