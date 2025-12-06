@@ -58,6 +58,12 @@ net.Receive("unsleepmenu",function(len,pl)
 
 	end)
 
+local MedicationState = {
+    TargetPlayer = nil,
+    SelectedCategory = nil,
+    SelectedMedication = nil
+}
+
 local MedicationMinigame = {
     active = false,
     startTime = 0,
@@ -276,12 +282,6 @@ end)
 local function OpenMedicationMinigame(duration, rounds, callback, medData)
     MedicationMinigame:Start(duration, rounds, callback, medData)
 end
-
-local MedicationState = {
-    TargetPlayer = nil,
-    SelectedCategory = nil,
-    SelectedMedication = nil
-}
 
 local BODY_PARTS = {
     {name = "Голова", hitgroup = "Голова"},
