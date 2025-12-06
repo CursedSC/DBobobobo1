@@ -3,6 +3,8 @@ util.AddNetworkString("PushPlayer")
 util.AddNetworkString("SearchPlayer")
 util.AddNetworkString("UNSearchPlayer")
 util.AddNetworkString("dbt.TakePlayer")
+util.AddNetworkString("dbt.ApplyMedication")
+util.AddNetworkString("dbt.OpenMedicationMenu")
 
 
 hook.Add("KeyPress","CheckOpenMenu",function(ply,key)
@@ -19,7 +21,7 @@ net.Receive("PushPlayer",function(len,pl)
   local data = net.ReadEntity()
 
   data:SetVelocity((data:GetPos() - pl:GetPos()) * 7)
-  data:EmitSound(PushSound[math.random(1, 4)])--
+  data:EmitSound(PushSound[math.random(1, 4)])
 end)
 
 net.Receive("SearchPlayer",function(len,pl)
@@ -66,7 +68,6 @@ hook.Add("PlayerEnteredVehicle", "dbt.Seats", function(ply,veh)
   end
 end)
 
--- Времено перенесено к дверям
 hook.Add( "PlayerUse", "dbt/PlayerUse/table", function( ply, ent )
   if not ply.cd_use then ply.cd_use = CurTime() end
   if "models/drp_props/furniture2.mdl" == ent:GetModel() and ply.cd_use < CurTime() then
@@ -145,7 +146,7 @@ netstream.Hook("dbt/finding/ended", function(ply, ent, bMulty)
         end
     end
         if FindWeaponCounter == 0 then StrToSend = "Пусто" end
---gesture_item_place
+
     if bMulty then 
         for k, v in ipairs( ents.FindInSphere(ply:GetPos(), 150) ) do
           if v:IsPlayer() then
@@ -166,11 +167,105 @@ netstream.Hook("dbt/entire", function(ply, ent)
     local obj = ply:LookupAttachment( "aoc_ValveBiped.Bip01_R_Hand" )
     local muzzle = ply:GetAttachment( obj )    
 
-    local a = demit_sit(ent, muzzle.Pos + ply:GetRight() * 20 + ply:GetForward() * -2 + ply:GetUp() * -18, muzzle.Ang + Angle(0,0,135), ply, 26, nil, true)  --- muzzle.Ang:Up() * 20 - muzzle.Ang:Right() * 20 - muzzle.Ang:Forward() * 5
+    local a = demit_sit(ent, muzzle.Pos + ply:GetRight() * 20 + ply:GetForward() * -2 + ply:GetUp() * -18, muzzle.Ang + Angle(0,0,135), ply, 26, nil, true)
     a:SetParent(ply, obj)
     ply.ssss = a
-    --timer.Simple(1, function() ply.ssss:SetPos(ply.ssss:GetPos() + ply:GetUp() * 35) end)
     ply:GetActiveWeapon():SetHoldType("duel")
     ply:SetNWBool("HavePlayerArms", true)
 end)
 
+function dbt.UseMedicaments(ply, medicineType, bodyPart)
+    if not IsValid(ply) or not ply:Alive() then return false end
+    
+    local wounds = ply:GetWounds()
+    if not wounds then return false end
+    
+    local healMap = {
+        ["Бинт"] = {"Лёгкоеранение", "Среднееранение"},
+        ["Хирургическийнабор"] = {"Тяжёлоеранение", "Пулевоеранение", "Среднееранение", "Лёгкоеранение"},
+        ["Шинадляпереломов"] = {"Перелом"},
+        ["Мазь"] = {"Ушиб"},
+        ["СлабыйТранквилизатор"] = {},
+        ["СильныйТранквилизатор"] = {},
+        ["Аптечка"] = {}
+    }
+    
+    local canHeal = healMap[medicineType]
+    if not canHeal then return false end
+    
+    local healed = false
+    
+    for woundType, _ in pairs(wounds) do
+        if table.HasValue(canHeal, woundType) then
+            if wounds[woundType][bodyPart] then
+                dbt.removeWound(ply, woundType, bodyPart)
+                healed = true
+                break
+            end
+        end
+    end
+    
+    return healed
+end
+
+net.Receive("dbt.ApplyMedication", function(len, sender)
+    local target = net.ReadEntity()
+    local itemId = net.ReadUInt(16)
+    local bodyPart = net.ReadString()
+    local position = net.ReadUInt(16)
+    
+    if not IsValid(sender) or not sender:Alive() then return end
+    if not IsValid(target) or not target:Alive() then return end
+    
+    local distance = sender:GetPos():Distance(target:GetPos())
+    if distance > 150 then
+        sender:ChatPrint("Цель слишком далеко!")
+        return
+    end
+    
+    local itemData = dbt.inventory.items[itemId]
+    if not itemData or not itemData.medicine then return end
+    
+    local inv = sender:GetInventory()
+    if not inv then return end
+    
+    local foundItem = false
+    for k, item in pairs(inv) do
+        if item.id == itemId and item.position == position then
+            foundItem = true
+            break
+        end
+    end
+    
+    if not foundItem then
+        sender:ChatPrint("У вас нет этого предмета!")
+        return
+    end
+    
+    sender:ChatPrint("Применение медикамента: " .. itemData.name .. " на " .. bodyPart)
+    
+    timer.Simple(itemData.time or 5, function()
+        if not IsValid(sender) or not IsValid(target) then return end
+        
+        if itemData.OnUse then
+            itemData.OnUse(target, itemData, {}, {position = position})
+        else
+            dbt.UseMedicaments(target, itemData.medicine, bodyPart)
+        end
+        
+        if not itemData.bNotDeleteOnUse then
+            sender:RemoveItem(position)
+        end
+        
+        sender:ChatPrint("Медикамент применён!")
+        target:ChatPrint(sender:Nick() .. " применил на вас: " .. itemData.name)
+    end)
+end)
+
+hook.Add("PlayerButtonDown", "dbt.MedicationMenuKey", function(ply, button)
+    if button == KEY_M and ply:Alive() and not ply.isSpectating then
+        net.Start("dbt.OpenMedicationMenu")
+            net.WriteEntity(ply)
+        net.Send(ply)
+    end
+end)
