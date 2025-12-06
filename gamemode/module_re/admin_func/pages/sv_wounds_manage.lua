@@ -1,49 +1,61 @@
-util.AddNetworkString("admin.RemoveWound")
-util.AddNetworkString("admin.ClearAllWounds")
+util.AddNetworkString("admin.ToggleWound")
 
-net.Receive("admin.RemoveWound", function(len, ply)
+DBT_WoundsSettings = DBT_WoundsSettings or {
+    ["Ушиб"] = true,
+    ["Ранение"] = true,
+    ["Тяжелое ранение"] = true,
+    ["Пулевое ранение"] = true,
+    ["Перелом"] = true,
+    ["Парализован"] = true
+}
+
+local function SaveWoundsSettings()
+    file.Write("dbt_wounds_settings.txt", util.TableToJSON(DBT_WoundsSettings))
+end
+
+local function LoadWoundsSettings()
+    if file.Exists("dbt_wounds_settings.txt", "DATA") then
+        local data = file.Read("dbt_wounds_settings.txt", "DATA")
+        if data then
+            local loaded = util.JSONToTable(data)
+            if loaded then
+                DBT_WoundsSettings = loaded
+            end
+        end
+    end
+end
+
+LoadWoundsSettings()
+
+function DBT_IsWoundEnabled(woundType)
+    return DBT_WoundsSettings[woundType] ~= false
+end
+
+net.Receive("admin.ToggleWound", function(len, ply)
     if not ply:IsSuperAdmin() then return end
     
-    local target = net.ReadEntity()
     local woundType = net.ReadString()
-    local bodyPart = net.ReadString()
+    local enabled = net.ReadBool()
     
-    if not IsValid(target) or not target:IsPlayer() then return end
+    DBT_WoundsSettings[woundType] = enabled
+    SaveWoundsSettings()
     
-    if dbt and dbt.removeWound then
-        dbt.removeWound(target, woundType, bodyPart)
-        
-        ply:ChatPrint("Успешно удалено ранение '" .. woundType .. "' с части тела '" .. bodyPart .. "' у игрока " .. target:Nick())
-    else
-        ply:ChatPrint("Ошибка: Система ранений не найдена")
+    netstream.Start(nil, "dbt/wounds/settings_sync", DBT_WoundsSettings)
+    
+    local statusText = enabled and "включено" or "выключено"
+    ply:ChatPrint("Ранение '" .. woundType .. "' " .. statusText)
+    
+    for _, p in ipairs(player.GetAll()) do
+        if p ~= ply and p:IsSuperAdmin() then
+            p:ChatPrint("[Админ] " .. ply:Nick() .. " " .. statusText .. " ранение: " .. woundType)
+        end
     end
 end)
 
-net.Receive("admin.ClearAllWounds", function(len, ply)
-    if not ply:IsSuperAdmin() then return end
-    
-    local target = net.ReadEntity()
-    
-    if not IsValid(target) or not target:IsPlayer() then return end
-    
-    local wounds = target:GetWounds()
-    if not wounds then 
-        ply:ChatPrint("У игрока " .. target:Nick() .. " нет ранений")
-        return 
-    end
-    
-    local woundCount = 0
-    
-    if dbt and dbt.removeWound then
-        for woundType, bodyParts in pairs(wounds) do
-            for bodyPart, data in pairs(bodyParts) do
-                dbt.removeWound(target, woundType, bodyPart)
-                woundCount = woundCount + 1
-            end
+hook.Add("PlayerInitialSpawn", "dbt_wounds_sync_settings", function(ply)
+    timer.Simple(1, function()
+        if IsValid(ply) then
+            netstream.Start(ply, "dbt/wounds/settings_sync", DBT_WoundsSettings)
         end
-        
-        ply:ChatPrint("Успешно удалено " .. woundCount .. " ранений у игрока " .. target:Nick())
-    else
-        ply:ChatPrint("Ошибка: Система ранений не найдена")
-    end
+    end)
 end)
