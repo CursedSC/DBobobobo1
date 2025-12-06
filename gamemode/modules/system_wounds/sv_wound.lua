@@ -239,6 +239,10 @@ function dbt.hasWoundOnpos(ply, wound, position)
 end
 
 function dbt.setWound(ply, wound, position, vector)
+	if DBT_IsWoundEnabled and not DBT_IsWoundEnabled(wound) then
+		return
+	end
+	
 	if !dbt.PlayersWounds[ply] then
 		dbt.PlayersWounds[ply] = {}
 	end
