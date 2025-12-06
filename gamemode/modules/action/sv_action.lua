@@ -6,6 +6,7 @@ util.AddNetworkString("dbt.TakePlayer")
 util.AddNetworkString("dbt.ApplyMedication")
 util.AddNetworkString("dbt.OpenMedicationMenu")
 util.AddNetworkString("dbt.StartMedicationMinigame")
+util.AddNetworkString("dbt.ShowParalyzedInfo")
 
 hook.Add("KeyPress","CheckOpenMenu",function(ply,key)
       if ( key == IN_USE && ply:GetEyeTrace().Entity ) then
