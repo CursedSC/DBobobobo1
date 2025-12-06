@@ -32,19 +32,28 @@ function GetTimeRemainingText(endTime)
 end
 
 function GetParalyzedPlayerInfo(target)
-    if not IsValid(target) or not target:IsPlayer() then return nil end
+    if not IsValid(target) then return nil end
     
-    local hasWound = dbt.hasWound(target, "Парализован")
+    local player = target
+    
+    if target:GetClass() == "prop_ragdoll" then
+        player = target.dbt_RagdollOwner
+        if not IsValid(player) then return nil end
+    end
+    
+    if not player:IsPlayer() then return nil end
+    
+    local hasWound = dbt.hasWound(player, "Парализован")
     if not hasWound then return nil end
     
-    local injectionData = target.dbt_InjectionData
+    local injectionData = player.dbt_InjectionData
     if not injectionData then return nil end
     
     local endTime = injectionData.time + injectionData.duration
     local bodyPartRu = BodyPartsRu[injectionData.bodyPart] or "неизвестную область"
     
     return {
-        name = target:Nick(),
+        name = player:Nick(),
         isParalyzed = true,
         drug = injectionData.drug,
         drugType = injectionData.type,
@@ -55,27 +64,49 @@ function GetParalyzedPlayerInfo(target)
 end
 
 hook.Add("KeyPress","CheckOpenMenu",function(ply,key)
-      if ( key == IN_USE && ply:GetEyeTrace().Entity && ply:GetEyeTrace().Entity:IsPlayer() ) then
-        if ply:GetPos():Distance(ply:GetEyeTrace().Entity:GetPos()) <= 50 then 
-              local target = ply:GetEyeTrace().Entity
-              
-              local info = GetParalyzedPlayerInfo(target)
-              if info then
-                  net.Start("dbt.ShowParalyzedInfo")
-                      net.WriteString(info.name)
-                      net.WriteBool(info.isParalyzed)
-                      net.WriteString(info.drug)
-                      net.WriteString(info.drugType)
-                      net.WriteString(info.bodyPart)
-                      net.WriteString(info.timeRemaining)
-                      net.WriteString(info.status)
-                  net.Send(ply)
-                  return
+      if ( key == IN_USE && ply:GetEyeTrace().Entity ) then
+        local target = ply:GetEyeTrace().Entity
+        if not IsValid(target) then return end
+        
+        if ply:GetPos():Distance(target:GetPos()) <= 150 then
+              if target:GetClass() == "prop_ragdoll" then
+                  local ragdollOwner = target.dbt_RagdollOwner
+                  if IsValid(ragdollOwner) then
+                      local info = GetParalyzedPlayerInfo(target)
+                      if info then
+                          net.Start("dbt.ShowParalyzedInfo")
+                              net.WriteString(info.name)
+                              net.WriteBool(info.isParalyzed)
+                              net.WriteString(info.drug)
+                              net.WriteString(info.drugType)
+                              net.WriteString(info.bodyPart)
+                              net.WriteString(info.timeRemaining)
+                              net.WriteString(info.status)
+                          net.Send(ply)
+                          return
+                      end
+                  end
+              elseif target:IsPlayer() then
+                  if ply:GetPos():Distance(target:GetPos()) <= 50 then
+                      local info = GetParalyzedPlayerInfo(target)
+                      if info then
+                          net.Start("dbt.ShowParalyzedInfo")
+                              net.WriteString(info.name)
+                              net.WriteBool(info.isParalyzed)
+                              net.WriteString(info.drug)
+                              net.WriteString(info.drugType)
+                              net.WriteString(info.bodyPart)
+                              net.WriteString(info.timeRemaining)
+                              net.WriteString(info.status)
+                          net.Send(ply)
+                          return
+                      end
+                      
+                      net.Start("OpenActionMenu")
+                        net.WriteEntity(target)
+                      net.Send(ply)
+                  end
               end
-              
-              net.Start("OpenActionMenu")
-                net.WriteEntity(target)
-              net.Send(ply)
         end
       end
 end)
@@ -490,7 +521,7 @@ net.Receive("dbt.InspectParalyzedPlayer", function(len, ply)
             icon = 'materials/dbt/notifications/notifications_main.png', 
             title = 'Осмотр', 
             titlecolor = Color(82, 204, 117), 
-            notiftext = 'Игрок ' .. target:Nick() .. ' не парализован.'
+            notiftext = 'Игрок не парализован.'
         })
     end
 end)
