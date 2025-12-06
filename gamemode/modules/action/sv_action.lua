@@ -8,7 +8,6 @@ util.AddNetworkString("dbt.ApplyTranquilizer")
 util.AddNetworkString("dbt.OpenMedicationMenu")
 util.AddNetworkString("dbt.StartMedicationMinigame")
 util.AddNetworkString("dbt.InspectParalyzedPlayer")
-util.AddNetworkString("dbt.ShowParalyzedInfo")
 
 local BodyPartsRu = {
     ["Голова"] = "Голову",
@@ -37,7 +36,7 @@ function GetParalyzedPlayerInfo(target)
     local player = target
     
     if target:GetClass() == "prop_ragdoll" then
-        player = target.dbt_RagdollOwner
+        player = target:GetNWEntity("owner")
         if not IsValid(player) then return nil end
     end
     
@@ -70,19 +69,38 @@ hook.Add("KeyPress","CheckOpenMenu",function(ply,key)
         
         if ply:GetPos():Distance(target:GetPos()) <= 150 then
               if target:GetClass() == "prop_ragdoll" then
-                  local ragdollOwner = target.dbt_RagdollOwner
+                  local ragdollOwner = target:GetNWEntity("owner")
                   if IsValid(ragdollOwner) then
                       local info = GetParalyzedPlayerInfo(target)
                       if info then
-                          net.Start("dbt.ShowParalyzedInfo")
-                              net.WriteString(info.name)
-                              net.WriteBool(info.isParalyzed)
-                              net.WriteString(info.drug)
-                              net.WriteString(info.drugType)
-                              net.WriteString(info.bodyPart)
-                              net.WriteString(info.timeRemaining)
-                              net.WriteString(info.status)
-                          net.Send(ply)
+                          ply.dbt_InspectingTarget = target
+                          ply.dbt_InspectingInfo = info
+                          
+                          ply:Freeze(true)
+                          netstream.Start(nil, "dbt/change/sq/anim", ply, "gesture_item_place")
+                          
+                          dbt.ShowTimerTarget(3, "Осмотр...", target, function()
+                              ply:Freeze(false)
+                              
+                              if IsValid(ply) and ply.dbt_InspectingInfo then
+                                  local chatInfo = ply.dbt_InspectingInfo
+                                  
+                                  netstream.Start(ply, "dbt/player/text", 
+                                      Color(143, 37, 156), "[ Результаты осмотра ]\n\n",
+                                      Color(255, 200, 50), "Имя: ", Color(255, 255, 255), chatInfo.name .. "\n",
+                                      Color(255, 100, 100), "Статус: ", Color(255, 255, 255), chatInfo.status .. "\n",
+                                      Color(180, 180, 255), "Препарат: ", Color(255, 255, 255), chatInfo.drug .. "\n",
+                                      chatInfo.drugType == "weak" and Color(100, 255, 100) or Color(255, 50, 50), "Сила: ",
+                                      Color(255, 255, 255), (chatInfo.drugType == "weak" and "Слабый" or "Сильный") .. "\n",
+                                      Color(255, 200, 100), "Место инъекции: ", Color(255, 255, 255), chatInfo.bodyPart .. "\n",
+                                      Color(150, 255, 150), "Осталось: ", Color(255, 255, 255), chatInfo.timeRemaining
+                                  )
+                                  
+                                  ply.dbt_InspectingTarget = nil
+                                  ply.dbt_InspectingInfo = nil
+                              end
+                          end, ply)
+                          
                           return
                       end
                   end
@@ -90,15 +108,34 @@ hook.Add("KeyPress","CheckOpenMenu",function(ply,key)
                   if ply:GetPos():Distance(target:GetPos()) <= 50 then
                       local info = GetParalyzedPlayerInfo(target)
                       if info then
-                          net.Start("dbt.ShowParalyzedInfo")
-                              net.WriteString(info.name)
-                              net.WriteBool(info.isParalyzed)
-                              net.WriteString(info.drug)
-                              net.WriteString(info.drugType)
-                              net.WriteString(info.bodyPart)
-                              net.WriteString(info.timeRemaining)
-                              net.WriteString(info.status)
-                          net.Send(ply)
+                          ply.dbt_InspectingTarget = target
+                          ply.dbt_InspectingInfo = info
+                          
+                          ply:Freeze(true)
+                          netstream.Start(nil, "dbt/change/sq/anim", ply, "gesture_item_place")
+                          
+                          dbt.ShowTimerTarget(3, "Осмотр...", target, function()
+                              ply:Freeze(false)
+                              
+                              if IsValid(ply) and ply.dbt_InspectingInfo then
+                                  local chatInfo = ply.dbt_InspectingInfo
+                                  
+                                  netstream.Start(ply, "dbt/player/text", 
+                                      Color(143, 37, 156), "[ Результаты осмотра ]\n\n",
+                                      Color(255, 200, 50), "Имя: ", Color(255, 255, 255), chatInfo.name .. "\n",
+                                      Color(255, 100, 100), "Статус: ", Color(255, 255, 255), chatInfo.status .. "\n",
+                                      Color(180, 180, 255), "Препарат: ", Color(255, 255, 255), chatInfo.drug .. "\n",
+                                      chatInfo.drugType == "weak" and Color(100, 255, 100) or Color(255, 50, 50), "Сила: ",
+                                      Color(255, 255, 255), (chatInfo.drugType == "weak" and "Слабый" or "Сильный") .. "\n",
+                                      Color(255, 200, 100), "Место инъекции: ", Color(255, 255, 255), chatInfo.bodyPart .. "\n",
+                                      Color(150, 255, 150), "Осталось: ", Color(255, 255, 255), chatInfo.timeRemaining
+                                  )
+                                  
+                                  ply.dbt_InspectingTarget = nil
+                                  ply.dbt_InspectingInfo = nil
+                              end
+                          end, ply)
+                          
                           return
                       end
                       
@@ -486,42 +523,5 @@ hook.Add("PlayerButtonDown", "dbt.MedicationMenuKey", function(ply, button)
         net.Start("dbt.OpenMedicationMenu")
             net.WriteEntity(ply)
         net.Send(ply)
-    end
-end)
-
-net.Receive("dbt.InspectParalyzedPlayer", function(len, ply)
-    local target = net.ReadEntity()
-    
-    if not IsValid(ply) or not IsValid(target) then return end
-    
-    local distance = ply:GetPos():Distance(target:GetPos())
-    if distance > 150 then
-        netstream.Start(ply, 'dbt/NewNotification', 3, {
-            icon = 'materials/dbt/notifications/notifications_main.png', 
-            title = 'Уведомление', 
-            titlecolor = Color(222, 193, 49), 
-            notiftext = 'Цель слишком далеко!'
-        })
-        return
-    end
-    
-    local info = GetParalyzedPlayerInfo(target)
-    if info then
-        net.Start("dbt.ShowParalyzedInfo")
-            net.WriteString(info.name)
-            net.WriteBool(info.isParalyzed)
-            net.WriteString(info.drug)
-            net.WriteString(info.drugType)
-            net.WriteString(info.bodyPart)
-            net.WriteString(info.timeRemaining)
-            net.WriteString(info.status)
-        net.Send(ply)
-    else
-        netstream.Start(ply, 'dbt/NewNotification', 3, {
-            icon = 'materials/dbt/notifications/notifications_main.png', 
-            title = 'Осмотр', 
-            titlecolor = Color(82, 204, 117), 
-            notiftext = 'Игрок не парализован.'
-        })
     end
 end)
