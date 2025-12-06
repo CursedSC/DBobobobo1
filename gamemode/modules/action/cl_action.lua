@@ -108,13 +108,29 @@ local function BuildBodyPartsWheel()
             mat = Material("icons/medical_plaster.png"),
             func = function()
                 local target = MedicationState.TargetPlayer or LocalPlayer()
+                local selectedMed = MedicationState.SelectedMedication
                 
-                net.Start("dbt.ApplyMedication")
-                    net.WriteEntity(target)
-                    net.WriteUInt(MedicationState.SelectedMedication.id, 16)
-                    net.WriteString(bodyPart.hitgroup)
-                    net.WriteUInt(MedicationState.SelectedMedication.position or 0, 16)
-                net.SendToServer()
+                OpenMedicationMinigame(10, 4, function(success, effectiveness, hits, misses)
+                    if success then
+                        net.Start("dbt.ApplyMedication")
+                            net.WriteEntity(target)
+                            net.WriteUInt(selectedMed.id, 16)
+                            net.WriteString(bodyPart.hitgroup)
+                            net.WriteUInt(selectedMed.position or 0, 16)
+                            net.WriteFloat(effectiveness)
+                        net.SendToServer()
+                    else
+                        chat.AddText(Color(234, 30, 33), "[Лечение] ", Color(255, 255, 255), "Процедура провалена! Медикамент потрачен впустую.")
+                        
+                        net.Start("dbt.ApplyMedication")
+                            net.WriteEntity(target)
+                            net.WriteUInt(selectedMed.id, 16)
+                            net.WriteString(bodyPart.hitgroup)
+                            net.WriteUInt(selectedMed.position or 0, 16)
+                            net.WriteFloat(0)
+                        net.SendToServer()
+                    end
+                end, selectedMed.data)
                 
                 MedicationState.SelectedMedication = nil
                 MedicationState.TargetPlayer = nil
