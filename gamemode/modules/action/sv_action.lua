@@ -219,46 +219,112 @@ net.Receive("dbt.ApplyMedication", function(len, sender)
     
     local distance = sender:GetPos():Distance(target:GetPos())
     if distance > 150 then
-        sender:ChatPrint("Цель слишком далеко!")
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
+            icon = 'materials/dbt/notifications/notifications_main.png', 
+            title = 'Уведомление', 
+            titlecolor = Color(222, 193, 49), 
+            notiftext = 'Цель слишком далеко!'
+        })
+        return
+    end
+    
+    if not sender.items or not sender.items[position] then
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
+            icon = 'materials/dbt/notifications/notifications_main.png', 
+            title = 'Ошибка', 
+            titlecolor = Color(215, 63, 65), 
+            notiftext = 'Предмет не найден!'
+        })
+        return
+    end
+    
+    local item = sender.items[position]
+    if item.id ~= itemId then
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
+            icon = 'materials/dbt/notifications/notifications_main.png', 
+            title = 'Ошибка', 
+            titlecolor = Color(215, 63, 65), 
+            notiftext = 'Несоответствие предмета!'
+        })
         return
     end
     
     local itemData = dbt.inventory.items[itemId]
-    if not itemData or not itemData.medicine then return end
-    
-    local inv = sender:GetInventory()
-    if not inv then return end
-    
-    local foundItem = false
-    for k, item in pairs(inv) do
-        if item.id == itemId and item.position == position then
-            foundItem = true
-            break
-        end
-    end
-    
-    if not foundItem then
-        sender:ChatPrint("У вас нет этого предмета!")
+    if not itemData or not itemData.medicine then
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
+            icon = 'materials/dbt/notifications/notifications_main.png', 
+            title = 'Ошибка', 
+            titlecolor = Color(215, 63, 65), 
+            notiftext = 'Это не медикамент!'
+        })
         return
     end
     
-    sender:ChatPrint("Применение медикамента: " .. itemData.name .. " на " .. bodyPart)
+    netstream.Start(sender, 'dbt/NewNotification', 1, {
+        icon = 'materials/icons/medical_chest.png', 
+        title = 'Лечение', 
+        titlecolor = Color(82, 204, 117), 
+        notiftext = 'Применяется ' .. itemData.name .. '...'
+    })
     
-    timer.Simple(itemData.time or 5, function()
+    local useTime = itemData.time or 5
+    timer.Simple(useTime, function()
         if not IsValid(sender) or not IsValid(target) then return end
         
+        if not sender.items or not sender.items[position] then return end
+        if sender.items[position].id ~= itemId then return end
+        
+        local success = false
         if itemData.OnUse then
-            itemData.OnUse(target, itemData, {}, {position = position})
+            itemData.OnUse(target, itemData, item.meta or {}, {position = position, bodyPart = bodyPart})
+            success = true
+        elseif itemData.medicine then
+            success = dbt.UseMedicaments(target, itemData.medicine, bodyPart)
+        end
+        
+        if success then
+            if not itemData.bNotDeleteOnUse then
+                dbt.inventory.removeitem(sender, position)
+            end
+            
+            netstream.Start(sender, 'dbt/NewNotification', 1, {
+                icon = 'materials/icons/medical_chest.png', 
+                title = 'Лечение', 
+                titlecolor = Color(82, 204, 117), 
+                notiftext = itemData.name .. ' применён!'
+            })
+            
+            if target ~= sender then
+                netstream.Start(target, 'dbt/NewNotification', 1, {
+                    icon = 'materials/icons/medical_chest.png', 
+                    title = 'Лечение', 
+                    titlecolor = Color(82, 204, 117), 
+                    notiftext = sender:Nick() .. ' применил: ' .. itemData.name
+                })
+            end
+            
+            if dbt and dbt.health and dbt.health.update then
+                netstream.Start(target, "dbt.health.update")
+            end
+            
+            if openobserve and openobserve.Log then
+                openobserve.Log({
+                    event = "medication_use",
+                    name = sender:Nick(),
+                    steamid = sender:SteamID(),
+                    item = itemData.name,
+                    target = target:Nick(),
+                    body_part = bodyPart
+                })
+            end
         else
-            dbt.UseMedicaments(target, itemData.medicine, bodyPart)
+            netstream.Start(sender, 'dbt/NewNotification', 3, {
+                icon = 'materials/dbt/notifications/notifications_main.png', 
+                title = 'Лечение', 
+                titlecolor = Color(222, 193, 49), 
+                notiftext = 'Нет необходимости в лечении!'
+            })
         end
-        
-        if not itemData.bNotDeleteOnUse then
-            sender:RemoveItem(position)
-        end
-        
-        sender:ChatPrint("Медикамент применён!")
-        target:ChatPrint(sender:Nick() .. " применил на вас: " .. itemData.name)
     end)
 end)
 
