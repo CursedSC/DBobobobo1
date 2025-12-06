@@ -176,70 +176,6 @@ netstream.Hook("dbt/entire", function(ply, ent)
     ply:SetNWBool("HavePlayerArms", true)
 end)
 
-function dbt.UseMedicaments(ply, medicineType, bodyPart, effectiveness)
-    if not IsValid(ply) or not ply:Alive() then return false end
-    
-    effectiveness = math.Clamp(effectiveness or 1, 0, 1)
-    
-    local wounds = ply:GetWounds()
-    if not wounds then return false end
-    
-    local healMap = {
-        ["Бинт"] = {"Лёгкоеранение", "Среднееранение"},
-        ["Хирургическийнабор"] = {"Тяжёлоеранение", "Пулевоеранение", "Среднееранение", "Лёгкоеранение"},
-        ["Шинадляпереломов"] = {"Перелом"},
-        ["Мазь"] = {"Ушиб"},
-        ["СлабыйТранквилизатор"] = {},
-        ["СильныйТранквилизатор"] = {},
-        ["Аптечка"] = {}
-    }
-    
-    local canHeal = healMap[medicineType]
-    if not canHeal then return false end
-    
-    local healed = false
-    
-    if effectiveness >= 0.75 then
-        for woundType, _ in pairs(wounds) do
-            if table.HasValue(canHeal, woundType) then
-                if wounds[woundType][bodyPart] then
-                    dbt.removeWound(ply, woundType, bodyPart)
-                    healed = true
-                    break
-                end
-            end
-        end
-    elseif effectiveness >= 0.5 then
-        local rand = math.random()
-        if rand <= 0.75 then
-            for woundType, _ in pairs(wounds) do
-                if table.HasValue(canHeal, woundType) then
-                    if wounds[woundType][bodyPart] then
-                        dbt.removeWound(ply, woundType, bodyPart)
-                        healed = true
-                        break
-                    end
-                end
-            end
-        end
-    elseif effectiveness >= 0.25 then
-        local rand = math.random()
-        if rand <= 0.5 then
-            for woundType, _ in pairs(wounds) do
-                if table.HasValue(canHeal, woundType) then
-                    if wounds[woundType][bodyPart] then
-                        dbt.removeWound(ply, woundType, bodyPart)
-                        healed = true
-                        break
-                    end
-                end
-            end
-        end
-    end
-    
-    return healed
-end
-
 net.Receive("dbt.StartMedicationProcess", function(len, sender)
     local target = net.ReadEntity()
     local itemId = net.ReadUInt(16)
@@ -298,7 +234,8 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         itemId = itemId,
         bodyPart = bodyPart,
         position = position,
-        itemData = itemData
+        itemData = itemData,
+        item = item
     }
     
     netstream.Start(nil, "dbt/change/sq/anim", sender, "gesture_item_place")
@@ -364,10 +301,8 @@ net.Receive("dbt.StartMedicationProcess", function(len, sender)
         
         local success = false
         if medData.itemData.OnUse then
-            medData.itemData.OnUse(currentTarget, medData.itemData, item.meta or {}, {position = medData.position, bodyPart = medData.bodyPart, effectiveness = effectiveness})
+            medData.itemData.OnUse(currentTarget, medData.itemData, medData.item.meta or {}, {position = medData.position, bodyPart = medData.bodyPart, effectiveness = effectiveness})
             success = true
-        elseif medData.itemData.medicine then
-            success = dbt.UseMedicaments(currentTarget, medData.itemData.medicine, medData.bodyPart, effectiveness)
         end
         
         local resultMessage = ""
