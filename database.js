@@ -271,13 +271,153 @@ class Database {
         console.log('✅ Представления rubycoin созданы');
     }
 
-    initDatabase() {}
-    initUserActivityTable() {}
-    initRubyCoinTable() {}
-    initTempBanTable() {}
-    initTempMuteTable() {}
-    initHakiSpinsTable() {}
-    initHakiHistoryTable() {}
+    initDatabase() {
+        const createTableQuery = `
+            CREATE TABLE IF NOT EXISTS characters (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                race TEXT,
+                age INTEGER,
+                nickname TEXT,
+                organization TEXT,
+                position TEXT,
+                mention TEXT,
+                strength INTEGER DEFAULT 0,
+                agility INTEGER DEFAULT 0,
+                reaction INTEGER DEFAULT 0,
+                accuracy INTEGER DEFAULT 0,
+                endurance INTEGER DEFAULT 0,
+                durability INTEGER DEFAULT 0,
+                magic INTEGER DEFAULT 0,
+                devilfruit TEXT,
+                patronage TEXT,
+                core TEXT,
+                hakivor TEXT,
+                hakinab TEXT,
+                hakiconq TEXT,
+                elements TEXT,
+                martialarts TEXT,
+                budget INTEGER DEFAULT 0,
+                additional TEXT,
+                avatar_url TEXT,
+                embed_color TEXT DEFAULT '#9932cc',
+                icon_url TEXT DEFAULT NULL,
+                slot INTEGER DEFAULT 1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+        this.db.run(createTableQuery, (err) => {
+            if (err) console.error('Ошибка создания таблицы персонажей:', err);
+        });
+    }
+
+    initUserActivityTable() {
+        const createActivityTableQuery = `
+            CREATE TABLE IF NOT EXISTS user_activity (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                guild_id TEXT NOT NULL,
+                messages_count INTEGER DEFAULT 0,
+                voice_time INTEGER DEFAULT 0,
+                week_start DATE NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, guild_id, week_start)
+            )
+        `;
+        this.db.run(createActivityTableQuery, (err) => {
+            if (err) console.error('Ошибка создания таблицы активности:', err);
+        });
+    }
+
+    initRubyCoinTable() {
+        const createRubyCoinTableQuery = `
+            CREATE TABLE IF NOT EXISTS user_rubycoins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL UNIQUE,
+                rubycoins REAL DEFAULT 0.0,
+                total_earned REAL DEFAULT 0.0,
+                total_spent REAL DEFAULT 0.0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+        this.db.run(createRubyCoinTableQuery, (err) => {
+            if (err) console.error('Ошибка создания таблицы RubyCoin:', err);
+        });
+    }
+
+    initTempBanTable() {
+        const createTempBanTableQuery = `
+            CREATE TABLE IF NOT EXISTS temp_bans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                guild_id TEXT NOT NULL,
+                ban_end_time DATETIME NOT NULL,
+                reason TEXT NOT NULL,
+                moderator_id TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, guild_id)
+            )
+        `;
+        this.db.run(createTempBanTableQuery, (err) => {
+            if (err) console.error('Ошибка создания таблицы темп-банов:', err);
+        });
+    }
+
+    initTempMuteTable() {
+        const createTempMuteTableQuery = `
+            CREATE TABLE IF NOT EXISTS temp_mutes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                guild_id TEXT NOT NULL,
+                mute_end_time DATETIME NOT NULL,
+                reason TEXT NOT NULL,
+                moderator_id TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, guild_id)
+            )
+        `;
+        this.db.run(createTempMuteTableQuery, (err) => {
+            if (err) console.error('Ошибка создания таблицы темп-мутов:', err);
+        });
+    }
+
+    initHakiSpinsTable() {
+        const createHakiSpinsTableQuery = `
+            CREATE TABLE IF NOT EXISTS user_haki_spins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL UNIQUE,
+                haki_spins INTEGER DEFAULT 0,
+                total_earned INTEGER DEFAULT 0,
+                total_used INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+        this.db.run(createHakiSpinsTableQuery, (err) => {
+            if (err) console.error('Ошибка создания таблицы круток хаки:', err);
+        });
+    }
+
+    initHakiHistoryTable() {
+        const createHakiHistoryTableQuery = `
+            CREATE TABLE IF NOT EXISTS haki_spin_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                haki_result TEXT NOT NULL,
+                spin_count INTEGER NOT NULL,
+                total_spins INTEGER NOT NULL,
+                session_id TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+        this.db.run(createHakiHistoryTableQuery, (err) => {
+            if (err) console.error('Ошибка создания таблицы истории хаки:', err);
+        });
+    }
+
     initTicketTable() {}
     initTicketLogsTable() {}
     initProfilesTable() {}
@@ -288,6 +428,175 @@ class Database {
     initEconomyTables() {}
     initKindnessSystem() {}
     initCustomProfileStyling() {}
+
+    getUserRubyCoins(userId) {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT rubycoins FROM user_rubycoins WHERE user_id = ?';
+            this.db.get(query, [userId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row ? row.rubycoins : 0);
+            });
+        });
+    }
+
+    addRubyCoins(userId, amount) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                INSERT INTO user_rubycoins (user_id, rubycoins, total_earned)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id)
+                DO UPDATE SET
+                    rubycoins = rubycoins + ?,
+                    total_earned = CASE WHEN ? > 0 THEN total_earned + ? ELSE total_earned END,
+                    total_spent = CASE WHEN ? < 0 THEN total_spent + ABS(?) ELSE total_spent END,
+                    updated_at = CURRENT_TIMESTAMP
+            `;
+            this.db.run(query, [
+                userId, amount, Math.max(0, amount),
+                amount,
+                amount, amount,
+                amount, amount
+            ], function(err) {
+                if (err) reject(err);
+                else resolve(this.changes);
+            });
+        });
+    }
+
+    getCharacterByUserId(userId) {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT * FROM characters WHERE user_id = ?';
+            this.db.get(query, [userId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+    }
+
+    getAllCharactersByUserId(userId) {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT * FROM characters WHERE user_id = ? ORDER BY slot ASC, created_at DESC';
+            this.db.all(query, [userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows || []);
+            });
+        });
+    }
+
+    getCharacterById(characterId) {
+        return new Promise((resolve, reject) => {
+            const query = 'SELECT * FROM characters WHERE id = ?';
+            this.db.get(query, [characterId], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+    }
+
+    createCharacter(characterData) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                INSERT INTO characters (
+                    user_id, name, race, age, nickname, organization, position, mention,
+                    strength, agility, reaction, accuracy, endurance, durability, magic,
+                    devilfruit, patronage, core, hakivor, hakinab,
+                    hakiconq, elements, martialarts, budget, additional, avatar_url, embed_color, slot
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+            this.db.run(query, [
+                characterData.user_id, characterData.name, characterData.race,
+                characterData.age, characterData.nickname, characterData.organization,
+                characterData.position, characterData.mention, characterData.strength,
+                characterData.agility, characterData.reaction, characterData.accuracy,
+                characterData.endurance, characterData.durability, characterData.magic,
+                characterData.devilfruit, characterData.patronage, characterData.core,
+                characterData.hakivor, characterData.hakinab,
+                characterData.hakiconq, characterData.elements,
+                characterData.martialarts, characterData.budget, characterData.additional,
+                characterData.avatar_url || null, characterData.embed_color || '#9932cc',
+                characterData.slot || 1
+            ], function(err) {
+                if (err) reject(err);
+                else resolve(this.lastID);
+            });
+        });
+    }
+
+    updateCharacterStats(characterId, stats) {
+        return new Promise((resolve, reject) => {
+            const query = `
+                UPDATE characters SET
+                    strength = ?, agility = ?, reaction = ?, accuracy = ?,
+                    endurance = ?, durability = ?, magic = ?, devilfruit = ?,
+                    patronage = ?, core = ?, hakivor = ?, hakinab = ?,
+                    hakiconq = ?, elements = ?, martialarts = ?, budget = ?,
+                    organization = ?, position = ?, additional = ?
+                WHERE id = ?
+            `;
+            this.db.run(query, [
+                stats.strength, stats.agility, stats.reaction, stats.accuracy,
+                stats.endurance, stats.durability, stats.magic, stats.devilfruit,
+                stats.patronage, stats.core, stats.hakivor, stats.hakinab,
+                stats.hakiconq, stats.elements, stats.martialarts, stats.budget,
+                stats.organization, stats.position, stats.additional, characterId
+            ], function(err) {
+                if (err) reject(err);
+                else resolve(this.changes);
+            });
+        });
+    }
+
+    deleteCharacter(characterId) {
+        return new Promise((resolve, reject) => {
+            const query = 'DELETE FROM characters WHERE id = ?';
+            this.db.run(query, [characterId], function(err) {
+                if (err) reject(err);
+                else resolve(this.changes);
+            });
+        });
+    }
+
+    addMessageActivity(userId, guildId) {
+        return new Promise((resolve, reject) => {
+            const weekStart = this.getWeekStart();
+            const query = `
+                INSERT INTO user_activity (user_id, guild_id, messages_count, week_start)
+                VALUES (?, ?, 1, ?)
+                ON CONFLICT(user_id, guild_id, week_start)
+                DO UPDATE SET
+                    messages_count = messages_count + 1,
+                    updated_at = CURRENT_TIMESTAMP
+            `;
+            this.db.run(query, [userId, guildId, weekStart], function(err) {
+                if (err) reject(err);
+                else resolve(this.changes);
+            });
+        });
+    }
+
+    getWeekStart() {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        const monday = new Date(now.setDate(diff));
+        monday.setHours(0, 0, 0, 0);
+        return monday.toISOString().split('T')[0];
+    }
+
+    getUserWeekActivity(userId, guildId) {
+        return new Promise((resolve, reject) => {
+            const weekStart = this.getWeekStart();
+            const query = `
+                SELECT messages_count, voice_time
+                FROM user_activity
+                WHERE user_id = ? AND guild_id = ? AND week_start = ?
+            `;
+            this.db.get(query, [userId, guildId, weekStart], (err, row) => {
+                if (err) reject(err);
+                else resolve(row || { messages_count: 0, voice_time: 0 });
+            });
+        });
+    }
 }
 
 module.exports = Database;
