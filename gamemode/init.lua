@@ -196,6 +196,7 @@ local function BlockUserKillCommand(ply)
 end
 hook.Add( "CanPlayerSuicide", "DisableKillCommandForUser", BlockUserKillCommand )
 
+
 concommand.Add("StopSpectator", function( ply, cmd, args )
     spectator.UnSpectate(ply)
 end)

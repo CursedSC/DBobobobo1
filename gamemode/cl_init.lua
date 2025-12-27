@@ -374,6 +374,10 @@ local INVENTORY_CATEGORY_ORDER = {
   "Медицина",
   "Оружие",
   "Патроны",
+  "LOTM Зелья",
+  "LOTM Артефакты",
+  "LOTM Ингредиенты",
+  "Валюта",
   "Остальное",
 }
 
@@ -383,6 +387,10 @@ local INVENTORY_CATEGORY_ICONS = {
   ["Медицина"] = "icon16/heart.png",
   ["Оружие"] = "icon16/gun.png",
   ["Патроны"] = "icon16/bullet_black.png",
+  ["LOTM Зелья"] = "icon16/ruby.png",
+  ["LOTM Артефакты"] = "icon16/star.png",
+  ["LOTM Ингредиенты"] = "icon16/package.png",
+  ["Валюта"] = "icon16/coins.png",
   ["Остальное"] = "icon16/box.png",
 }
 
@@ -410,6 +418,10 @@ local function DetectInventoryCategory(itemData)
   if itemData.medicine then return "Медицина" end
   if itemData.food then return "Еда" end
   if itemData.water then return "Вода" end
+  if itemData.lotmPotion then return "LOTM Зелья" end
+  if itemData.lotmArtifact then return "LOTM Артефакты" end
+  if itemData.ingredient then return "LOTM Ингредиенты" end
+  if itemData.currency then return "Валюта" end
   return "Остальное"
 end
 
@@ -581,3 +593,23 @@ local function CreateInventoryContentPanel()
 end
 
 spawnmenu.AddCreationTab("Предметы", CreateInventoryContentPanel, "icon16/application_view_tile.png", 4)
+concommand.Add("bones", function()
+    local ent = LocalPlayer():GetEyeTrace().Entity
+    if not IsValid(ent) then 
+        print("Направь прицел на проп!")
+        return 
+    end
+    
+    local boneCount = ent:GetBoneCount()
+    if boneCount == 0 then
+        print("У этого пропа нет костей")
+        return
+    end
+    
+    print("=== Кости: " .. tostring(ent) .. " ===")
+    for i = 0, boneCount - 1 do
+        local boneName = ent:GetBoneName(i)
+        print(string.format("[%d] %s", i, boneName))
+    end
+    print("=== Всего костей: " .. boneCount .. " ===")
+end)

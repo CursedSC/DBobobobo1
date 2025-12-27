@@ -21,6 +21,7 @@ local colorBlack = Color(0, 0, 0, 230)
 local colorBlack2 = Color(49, 0, 54, 40)
 local colorText = Color(255,255,255,100)
 local colorButtonExit = Color(250, 250, 250, 1)
+local colorCustomCreate = Color(211, 25, 202, 180) -- Цвет для кнопки создания персонажа
 
 local tableBG = {
     Material("dbt/f4/bg/f4_bg_1.png"),
@@ -168,6 +169,37 @@ function openf4()
 
     dbt.f4.settings = button
 
+    -- LOTM (Lord of The Mysteries) Button
+    local button = vgui.Create("DButton", dbt.f4)
+    button:SetText("")
+    button:SetPos(dbtPaint.WidthSource(752), dbtPaint.HightSource(846))
+    button:SetSize(dbtPaint.WidthSource(416), dbtPaint.HightSource(64))
+    button.ColorBorder = Color(150, 100, 220)
+    button.ColorBorder.a = 0
+    button.Paint = function(self, w, h)
+        local hovered = self:IsHovered()
+        draw.RoundedBox(0, 0, 0, w, h, hovered and colorButtonActive or colorButtonInactive)
+
+        if hovered then
+            self.ColorBorder.a = Lerp(FrameTime()*5, self.ColorBorder.a, 255)
+            draw_border(w, h, self.ColorBorder)
+        else
+            self.ColorBorder.a = Lerp(FrameTime()*5, self.ColorBorder.a, 0)
+        end
+
+        draw.SimpleText("Lord of The Mysteries", "Comfortaa Light X50", w * 0.5, dbtPaint.HightSource(5), color_white, TEXT_ALIGN_CENTER)
+    end
+    button.DoClick = function()
+        surface.PlaySound('ui/button_click.mp3')
+        dbt.f4:Close()
+        if LOTM and LOTM.F4 and LOTM.F4.OpenMenu then
+            LOTM.F4.OpenMenu()
+        end
+    end
+    button.OnCursorEntered = function() surface.PlaySound('ui/ui_but/ui_hover.wav') end
+
+    dbt.f4.lotm = button
+
 end
 
 
@@ -230,6 +262,16 @@ function openseasonselect()
     dbt.f4:SetDraggable(false)
     dbt.f4:ShowCloseButton( false )
     dbt.f4:MakePopup()
+    
+    -- Обработка ESC для выхода в главное меню
+    dbt.f4.OnKeyCodePressed = function(self, key)
+        if key == KEY_ESCAPE then
+            surface.PlaySound('ui/button_back.mp3')
+            self:Close()
+            openf4()
+            return true
+        end
+    end
 
     dbt.f4.Paint = function(self, w, h)
         BlurScreen(24)
@@ -287,6 +329,61 @@ function openseasonselect()
 
     end
 
+    -- КНОПКА СОЗДАНИЯ КАСТОМНОГО ПЕРСОНАЖА
+    local createCustomButton = vgui.Create("DButton", dbt.f4)
+    createCustomButton:SetText("")
+    createCustomButton:SetPos(dbtPaint.WidthSource(1550), dbtPaint.HightSource(38))
+    createCustomButton:SetSize(dbtPaint.WidthSource(320), dbtPaint.HightSource(88))
+    createCustomButton.ColorBorder = colorOutLine
+    createCustomButton.ColorBorder.a = 0
+    createCustomButton.glowAlpha = 0
+    
+    createCustomButton.Paint = function(self, w, h)
+        local hovered = self:IsHovered()
+        
+        -- Анимация свечения
+        if hovered then
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 100)
+            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 255)
+        else
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 0)
+            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 150)
+        end
+        
+        -- Фон
+        draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 150))
+        
+        -- Градиентное свечение при наведении
+        if self.glowAlpha > 0 then
+            draw.RoundedBox(0, 0, 0, w, h, Color(colorOutLine.r, colorOutLine.g, colorOutLine.b, self.glowAlpha))
+        end
+        
+        -- Анимированная граница
+        local borderSize = hovered and 3 or 2
+        draw.RoundedBox(0, 0, 0, w, borderSize, self.ColorBorder)
+        draw.RoundedBox(0, 0, h - borderSize, w, borderSize, self.ColorBorder)
+        draw.RoundedBox(0, 0, 0, borderSize, h, self.ColorBorder)
+        draw.RoundedBox(0, w - borderSize, 0, borderSize, h, self.ColorBorder)
+        
+        -- Текст с анимацией
+        local textY = hovered and (h / 2 - dbtPaint.HightSource(2)) or (h / 2)
+        draw.SimpleText("СОЗДАТЬ", "Comfortaa Bold X35", w / 2, textY - dbtPaint.HightSource(15), color_white, TEXT_ALIGN_CENTER)
+        draw.SimpleText("ПЕРСОНАЖА", "Comfortaa Light X30", w / 2, textY + dbtPaint.HightSource(15), colorOutLine, TEXT_ALIGN_CENTER)
+        
+        -- Иконка +
+        local iconSize = hovered and dbtPaint.WidthSource(25) or dbtPaint.WidthSource(20)
+        draw.SimpleText("+", "Comfortaa Bold X60", w / 2, -dbtPaint.HightSource(25), Color(255, 255, 255, self.glowAlpha + 155), TEXT_ALIGN_CENTER)
+    end
+    
+    createCustomButton.DoClick = function()
+        surface.PlaySound('ui/button_click.mp3')
+        dbt.f4:Close()
+        open_custom_character_creator()
+    end
+    
+    createCustomButton.OnCursorEntered = function()
+        surface.PlaySound('ui/ui_but/ui_hover.wav')
+    end
 
     local button = vgui.Create("DButton", dbt.f4)
     button:SetText("")
@@ -357,6 +454,16 @@ function open_choose_characters(CURRENT_SEASON)
     dbt.f4:SetDraggable(false)
     dbt.f4:ShowCloseButton( false )
     dbt.f4:MakePopup()
+    
+    -- Обработка ESC для возврата к выбору сезонов
+    dbt.f4.OnKeyCodePressed = function(self, key)
+        if key == KEY_ESCAPE then
+            surface.PlaySound('ui/button_back.mp3')
+            openseasonselect()
+            return true
+        end
+    end
+    
     dbt.f4.Paint = function(self, w, h)
         BlurScreen(24)
         draw.RoundedBox(0, 0, 0, w, h, colorBlack)
@@ -410,6 +517,17 @@ function open_choose_characters(CURRENT_SEASON)
             if yCustom == dbtPaint.HightSource(35)  then
                 draw.SimpleText("Отсуствует.", "Comfortaa Light X40", dbtPaint.WidthSource(1732), dbtPaint.HightSource(183) + yCustom, color_white, TEXT_ALIGN_CENTER)
             end
+            
+            -- Отображение информации LOTM для кастомных персонажей
+            if charactersList[SelectedCharacter].lotm then
+                local lotmData = charactersList[SelectedCharacter].lotm
+                local pathway = LOTM.PathwaysList[lotmData.pathway]
+                local seqName = LOTM.GetSequenceName(lotmData.pathway, lotmData.sequence)
+                
+                draw.SimpleText("Путь LOTM:", "Comfortaa Bold X30", dbtPaint.WidthSource(60), dbtPaint.HightSource(700), colorOutLine, TEXT_ALIGN_LEFT)
+                draw.SimpleText(pathway.name, "Comfortaa Light X25", dbtPaint.WidthSource(60), dbtPaint.HightSource(735), pathway.color, TEXT_ALIGN_LEFT)
+                draw.SimpleText("Seq " .. lotmData.sequence .. ": " .. seqName, "Comfortaa Light X20", dbtPaint.WidthSource(60), dbtPaint.HightSource(765), color_white, TEXT_ALIGN_LEFT)
+            end
         end
 
 
@@ -438,11 +556,20 @@ function open_choose_characters(CURRENT_SEASON)
 
             end
             local borderSize = hovered and 3 or 1
-            draw.RoundedBox(0, 0, 0, w, borderSize, hovered and border_pu or border_white)
-            draw.RoundedBox(0, 0, h - borderSize, w, borderSize, hovered and border_pu or border_white)
+            
+            -- Специальная граница для кастомных персонажей
+            local borderColor = border_white
+            if char_tbl.season == 20 then
+                borderColor = hovered and colorOutLine or Color(colorOutLine.r, colorOutLine.g, colorOutLine.b, 100)
+            else
+                borderColor = hovered and border_pu or border_white
+            end
+            
+            draw.RoundedBox(0, 0, 0, w, borderSize, borderColor)
+            draw.RoundedBox(0, 0, h - borderSize, w, borderSize, borderColor)
 
-            draw.RoundedBox(0, 0, 0, borderSize, h, hovered and border_pu or border_white)
-            draw.RoundedBox(0, w - borderSize, 0, borderSize, h, hovered and border_pu or border_white)
+            draw.RoundedBox(0, 0, 0, borderSize, h, borderColor)
+            draw.RoundedBox(0, w - borderSize, 0, borderSize, h, borderColor)
 
             dbtPaint.DrawRect(material2, dbtPaint.WidthSource(6), dbtPaint.HightSource(6), w - dbtPaint.WidthSource(12), h - dbtPaint.HightSource(12))
         end
@@ -486,18 +613,18 @@ buildSettingsType[SETTING_NUMSLIDER] = function(parent, inf)
     settingsPanel:SetSize(dbtPaint.WidthSource(225), dbtPaint.HightSource(30))
     settingsPanel:SetPos(dbtPaint.WidthSource(635), dbtPaint.HightSource(10))
     local pxlPercentage = dbtPaint.WidthSource(225) / 25
-    settingsPanel.Paint = function(self, w, h)
+    settingsPanel.Paint = function(self, panelW, panelH)
         local percent = self.Value
         for k = 1, 24 do
             local b = (percent > k)
             draw.RoundedBox(0, 0 + dbtPaint.WidthSource(9) * (k - 1), 0, dbtPaint.WidthSource(7), dbtPaint.HightSource(30), b and colorSettingsNUMSLIDER or colorSettingsSoundUnactive2 )
         end
         if self:IsHovered() and input.IsMouseDown( MOUSE_LEFT ) then
-            local x, y = input.GetCursorPos()
-            local x, y = self:ScreenToLocal( x, y )
-            draw.RoundedBox(0, x, y, 3, 3, colorSettingsPanelActive)
+            local cursorX, cursorY = input.GetCursorPos()
+            local localX, localY = self:ScreenToLocal( cursorX, cursorY )
+            draw.RoundedBox(0, localX, localY, 3, 3, colorSettingsPanelActive)
 
-            local a = math.Round(x / pxlPercentage)
+            local a = math.Round(localX / pxlPercentage)
             local nv = a
             if self.Value != (nv) then settings.Set(inf.settingInfo.name, nv)  end
             self.Value = nv

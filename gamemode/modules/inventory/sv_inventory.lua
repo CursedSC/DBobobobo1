@@ -56,7 +56,9 @@ local function CheckSpoilForPlayer(ply)
 	local changed = false
 	for i = 1, #ply.items do
 		local entry = ply.items[i]
+		if not entry then continue end -- Fix: skip nil entries
 		local data = dbt.inventory.items[entry.id]
+		if not data then continue end -- Fix: skip if item data not found
 		if IsEdible(data) and entry.meta then
 			local spoilAt = entry.meta.spoilAt
 			if not spoilAt then
@@ -247,7 +249,15 @@ function dbt.inventory.additem(ply, id, meta, slot_ex, bNoKG)
 	ply.info = ply.info or { keys = {}, monopad = {}, use_slots = 0, slots = {}, kg = 0 }
 	local inv_player = ply.items or {}
 	local itemData = dbt.inventory.items[tonumber(id)]
-	local characterInventory = dbt.chr[ply:Pers()].maxInventory or 10
+	
+	-- Fix: Check if itemData exists
+	if not itemData then
+		netstream.Start(ply, "dbt/inventory/error", "Предмет не найден! (ID: " .. tostring(id) .. ")")
+		return false
+	end
+	
+	local characterData = dbt.chr[ply:Pers()]
+	local characterInventory = (characterData and characterData.maxInventory) or 10
 	if #inv_player >= characterInventory then
 		SendInventoryUpdate(ply)
 
@@ -497,6 +507,38 @@ concommand.Add("giveall_items", function(ply, cmd, arg)
 	for k,i in pairs(player.GetAll()) do
 		dbt.inventory.additem(i, 1, {owner = i:Pers()})
 		dbt.inventory.additem(i, 2, {owner = i:Pers()})
+	end
+end)
+
+-- Команда для выдачи предметов из Q-меню
+concommand.Add("dbt_giveitem", function(ply, cmd, args)
+	if not IsValid(ply) then return end
+	if not args or not args[1] then return end
+	
+	local itemId = tonumber(args[1])
+	if not itemId then return end
+	
+	local itemData = dbt.inventory.items[itemId]
+	if not itemData then
+		ply:ChatPrint("[Ошибка] Предмет с ID " .. itemId .. " не найден")
+		return
+	end
+	
+	-- Специальная обработка для некоторых предметов
+	local meta = {}
+	if itemId == 1 then
+		-- Монопад
+		local id = dbt.monopads and dbt.monopads.New(ply:Pers())
+		meta = {owner = ply:Pers(), id = id}
+	else
+		meta = {owner = ply:Pers()}
+	end
+	
+	local success = dbt.inventory.additem(ply, itemId, meta)
+	if success then
+		ply:ChatPrint("[Инвентарь] Получен предмет: " .. (itemData.name or "Предмет #" .. itemId))
+	else
+		ply:ChatPrint("[Ошибка] Не удалось выдать предмет")
 	end
 end)
 

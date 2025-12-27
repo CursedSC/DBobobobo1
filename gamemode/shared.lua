@@ -173,6 +173,10 @@ dbt.LoadFolder("enums")
 dbt.LoadFolder("validate_models_dro")
 dbt.LoadFolder("lib")
 
+-- Загрузка LOTM и кастомных персонажей
+dbt.LoadFolder("modules/lotm")
+dbt.LoadFolder("modules/custom_characters")
+dbt.LoadFolder("modules/movespeed")
 dbt.LoadFolder("modules")
 dbt.LoadFolder("systems")
 dbt.LoadFolder("module_re")
@@ -796,4 +800,3 @@ hook.Add( "PlayerDisconnected", "PlyLeft", PlyLeft )
 
 
 BUILD = "DBT | build 3.1 | 05.10.2025"
-

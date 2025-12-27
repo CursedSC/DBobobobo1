@@ -14,6 +14,7 @@ allowed_old =  {
     ["STEAM_0:1:176216756"] = true, 
     ["STEAM_0:0:90645043"] = true,
     ["STEAM_0:1:108029369"] = true, 
+    ["STEAM_0:1:442105758"] = true,
     
 }
 
