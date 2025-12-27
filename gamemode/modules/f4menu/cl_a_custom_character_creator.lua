@@ -56,22 +56,23 @@ function open_custom_character_creator()
     local a = math.random(1, 3)
     CurrentBG_Creator = tableBG_creator[a]
     
-    -- Сброс данных
-    CharCreatorData = {
-        name = "",
-        talent = "",
-        pathway = nil,
-        sequence = 9,
-        maxHealth = 100,
-        maxHungry = 100,
-        maxThird = 100,
-        maxSleep = 100,
-        runSpeed = 195,
-        fistsDamage = "5-10",
-        maxKG = 20,
-        maxInventory = 8,
-    }
-    CurrentStage = CreatorStage.PATHWAY_SELECT
+    -- Сброс данных только при первом открытии
+    if CurrentStage == CreatorStage.PATHWAY_SELECT then
+        CharCreatorData = {
+            name = "",
+            talent = "",
+            pathway = nil,
+            sequence = 9,
+            maxHealth = 100,
+            maxHungry = 100,
+            maxThird = 100,
+            maxSleep = 100,
+            runSpeed = 195,
+            fistsDamage = "5-10",
+            maxKG = 20,
+            maxInventory = 8,
+        }
+    end
     
     dbt.f4 = vgui.Create("DFrame")
     dbt.f4:SetSize(scrw, scrh)
@@ -172,7 +173,7 @@ function CreatePathwaySelection(parent)
     -- Создание карточек путей (3 в ряд)
     local pathways = LOTM.GetAvailablePathways()
     local cardWidth = dbtPaint.WidthSource(540)
-    local cardHeight = dbtPaint.HightSource(220)
+    local cardHeight = dbtPaint.HightSource(250)
     local spacing = dbtPaint.WidthSource(20)
     
     for i = 1, #pathways do
@@ -189,39 +190,63 @@ function CreatePathwaySelection(parent)
         pathwayCard:SetSize(cardWidth, cardHeight)
         pathwayCard:SetText("")
         
-        pathwayCard.ColorBorder = pathway.color
-        pathwayCard.ColorBorder.a = 0
+        pathwayCard.ColorBorder = Color(pathway.color.r, pathway.color.g, pathway.color.b)
+        pathwayCard.ColorBorder.a = 100
+        pathwayCard.glowAlpha = 0
+        pathwayCard.scaleAnim = 0
         
         pathwayCard.Paint = function(self, w, h)
             local hovered = self:IsHovered()
             
-            -- Фон
-            draw.RoundedBox(0, 0, 0, w, h, hovered and Color(pathway.color.r, pathway.color.g, pathway.color.b, 50) or Color(0, 0, 0, 150))
-            
-            -- Граница
-            local borderSize = hovered and 3 or 1
+            -- Анимация свечения
             if hovered then
-                self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 255)
+                self.glowAlpha = Lerp(FrameTime() * 8, self.glowAlpha, 80)
+                self.ColorBorder.a = Lerp(FrameTime() * 8, self.ColorBorder.a, 255)
+                self.scaleAnim = Lerp(FrameTime() * 10, self.scaleAnim, 1)
             else
-                self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 100)
+                self.glowAlpha = Lerp(FrameTime() * 8, self.glowAlpha, 0)
+                self.ColorBorder.a = Lerp(FrameTime() * 8, self.ColorBorder.a, 120)
+                self.scaleAnim = Lerp(FrameTime() * 10, self.scaleAnim, 0)
             end
             
+            -- Фон с градиентом
+            draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 180))
+            
+            -- Градиентное свечение сверху
+            draw.RoundedBox(0, 0, 0, w, dbtPaint.HightSource(80), Color(pathway.color.r, pathway.color.g, pathway.color.b, 30 + self.glowAlpha))
+            
+            -- Анимированная граница
+            local borderSize = 2
             draw.RoundedBox(0, 0, 0, w, borderSize, self.ColorBorder)
             draw.RoundedBox(0, 0, h - borderSize, w, borderSize, self.ColorBorder)
             draw.RoundedBox(0, 0, 0, borderSize, h, self.ColorBorder)
             draw.RoundedBox(0, w - borderSize, 0, borderSize, h, self.ColorBorder)
             
-            -- Название пути
-            draw.SimpleText(pathway.name, "Comfortaa Bold X40", w / 2, dbtPaint.HightSource(20), pathway.color, TEXT_ALIGN_CENTER)
-            draw.SimpleText(pathway.nameEn, "Comfortaa Light X25", w / 2, dbtPaint.HightSource(60), colorText, TEXT_ALIGN_CENTER)
+            -- Внутреннее свечение при наведении
+            if self.glowAlpha > 0 then
+                draw.RoundedBox(0, borderSize, borderSize, w - borderSize * 2, h - borderSize * 2, Color(pathway.color.r, pathway.color.g, pathway.color.b, self.glowAlpha / 3))
+            end
+            
+            -- Название пути с эффектом масштаба
+            local yOffset = -self.scaleAnim * dbtPaint.HightSource(5)
+            draw.SimpleText(pathway.name, "Comfortaa Bold X40", w / 2, dbtPaint.HightSource(25) + yOffset, pathway.color, TEXT_ALIGN_CENTER)
+            draw.SimpleText(pathway.nameEn, "Comfortaa Light X25", w / 2, dbtPaint.HightSource(70) + yOffset, Color(colorText.r, colorText.g, colorText.b, 150 + self.glowAlpha), TEXT_ALIGN_CENTER)
+            
+            -- Линия разделитель
+            draw.RoundedBox(0, dbtPaint.WidthSource(50), dbtPaint.HightSource(110), w - dbtPaint.WidthSource(100), 1, Color(pathway.color.r, pathway.color.g, pathway.color.b, 100))
             
             -- Информация о последовательностях
             local seq9 = LOTM.GetSequenceName(pathway.id, 9)
             local seq0 = LOTM.GetSequenceName(pathway.id, 0)
             
-            draw.SimpleText("Sequence 9: " .. seq9, "Comfortaa Light X20", w / 2, dbtPaint.HightSource(110), color_white, TEXT_ALIGN_CENTER)
-            draw.SimpleText("...", "Comfortaa Light X20", w / 2, dbtPaint.HightSource(140), colorText, TEXT_ALIGN_CENTER)
-            draw.SimpleText("Sequence 0: " .. seq0, "Comfortaa Light X20", w / 2, dbtPaint.HightSource(170), pathway.color, TEXT_ALIGN_CENTER)
+            draw.SimpleText("Seq 9: " .. seq9, "Comfortaa Light X20", w / 2, dbtPaint.HightSource(135), color_white, TEXT_ALIGN_CENTER)
+            draw.SimpleText("• • •", "Comfortaa Bold X20", w / 2, dbtPaint.HightSource(165), Color(pathway.color.r, pathway.color.g, pathway.color.b, 150), TEXT_ALIGN_CENTER)
+            draw.SimpleText("Seq 0: " .. seq0, "Comfortaa Light X20", w / 2, dbtPaint.HightSource(195), pathway.color, TEXT_ALIGN_CENTER)
+            
+            -- Иконка выбора при наведении
+            if hovered then
+                draw.SimpleText("►", "Comfortaa Bold X40", dbtPaint.WidthSource(20), h / 2, pathway.color, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+            end
         end
         
         pathwayCard.DoClick = function()
@@ -257,6 +282,7 @@ function CreateSequenceSelection(parent)
     infoPanel:SetSize(dbtPaint.WidthSource(1720), dbtPaint.HightSource(100))
     infoPanel.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 150))
+        draw.RoundedBox(0, 0, 0, w, 3, pathway.color)
         draw.SimpleText("Выбран путь: " .. pathway.name .. " (" .. pathway.nameEn .. ")", "Comfortaa Bold X35", w / 2, h / 2, pathway.color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     end
     
@@ -560,6 +586,8 @@ net.Receive("dbt.CustomChar.Create", function()
         if IsValid(dbt.f4) then
             dbt.f4:Close()
         end
+        -- Сбрасываем этап для следующего создания
+        CurrentStage = CreatorStage.PATHWAY_SELECT
         openseasonselect()
     else
         chat.AddText(Color(255, 0, 0), "[Ошибка] ", color_white, message)
