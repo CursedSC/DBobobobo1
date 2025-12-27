@@ -230,6 +230,16 @@ function openseasonselect()
     dbt.f4:SetDraggable(false)
     dbt.f4:ShowCloseButton( false )
     dbt.f4:MakePopup()
+    
+    -- Обработка ESC для выхода в главное меню
+    dbt.f4.OnKeyCodePressed = function(self, key)
+        if key == KEY_ESCAPE then
+            surface.PlaySound('ui/button_back.mp3')
+            self:Close()
+            openf4()
+            return true
+        end
+    end
 
     dbt.f4.Paint = function(self, w, h)
         BlurScreen(24)
@@ -357,6 +367,16 @@ function open_choose_characters(CURRENT_SEASON)
     dbt.f4:SetDraggable(false)
     dbt.f4:ShowCloseButton( false )
     dbt.f4:MakePopup()
+    
+    -- Обработка ESC для возврата к выбору сезонов
+    dbt.f4.OnKeyCodePressed = function(self, key)
+        if key == KEY_ESCAPE then
+            surface.PlaySound('ui/button_back.mp3')
+            openseasonselect()
+            return true
+        end
+    end
+    
     dbt.f4.Paint = function(self, w, h)
         BlurScreen(24)
         draw.RoundedBox(0, 0, 0, w, h, colorBlack)
