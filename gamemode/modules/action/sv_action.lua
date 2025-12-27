@@ -3,9 +3,8 @@ util.AddNetworkString("PushPlayer")
 util.AddNetworkString("SearchPlayer")
 util.AddNetworkString("UNSearchPlayer")
 util.AddNetworkString("dbt.TakePlayer")
-util.AddNetworkString("dbt.ApplyMedication")
 util.AddNetworkString("dbt.OpenMedicationMenu")
-util.AddNetworkString("dbt.StartMedicationMinigame")
+util.AddNetworkString("dbt.StartMedicationProcess")
 
 hook.Add("KeyPress","CheckOpenMenu",function(ply,key)
       if ( key == IN_USE && ply:GetEyeTrace().Entity ) then
@@ -180,10 +179,25 @@ end)
 function dbt.UseMedicaments(ply, medicineType, bodyPart, effectiveness)
     if not IsValid(ply) or not ply:Alive() then return false end
     
-    effectiveness = math.Clamp(effectiveness or 1, 0, 1)
+    effectiveness = effectiveness or 1
+    bodyPart = bodyPart or "Туловище"
     
-    local wounds = ply:GetWounds()
-    if not wounds then return false end
+    if not dbt or not dbt.removeWound then
+        return true
+    end
+    
+    local wounds = nil
+    if isfunction(ply.GetWounds) then
+        wounds = ply:GetWounds()
+    elseif istable(ply.wounds) then
+        wounds = ply.wounds
+    elseif dbt and dbt.getWounds then
+        wounds = dbt.getWounds(ply)
+    end
+    
+    if not wounds or not istable(wounds) then 
+        return true
+    end
     
     local healMap = {
         ["Бинт"] = {"Лёгкоеранение", "Среднееранение"},
@@ -196,80 +210,50 @@ function dbt.UseMedicaments(ply, medicineType, bodyPart, effectiveness)
     }
     
     local canHeal = healMap[medicineType]
-    if not canHeal then return false end
+    if not canHeal then return true end
     
     local healed = false
     
+    effectiveness = math.Clamp(effectiveness, 0, 1)
+    
     if effectiveness >= 0.75 then
         for woundType, _ in pairs(wounds) do
-            if table.HasValue(canHeal, woundType) then
-                if wounds[woundType][bodyPart] then
+            if table.HasValue(canHeal, woundType) and wounds[woundType][bodyPart] then
+                dbt.removeWound(ply, woundType, bodyPart)
+                healed = true
+                break
+            end
+        end
+    elseif effectiveness >= 0.5 then
+        if math.random() <= 0.75 then
+            for woundType, _ in pairs(wounds) do
+                if table.HasValue(canHeal, woundType) and wounds[woundType][bodyPart] then
                     dbt.removeWound(ply, woundType, bodyPart)
                     healed = true
                     break
                 end
             end
         end
-    elseif effectiveness >= 0.5 then
-        local rand = math.random()
-        if rand <= 0.75 then
-            for woundType, _ in pairs(wounds) do
-                if table.HasValue(canHeal, woundType) then
-                    if wounds[woundType][bodyPart] then
-                        dbt.removeWound(ply, woundType, bodyPart)
-                        healed = true
-                        break
-                    end
-                end
-            end
-        end
     elseif effectiveness >= 0.25 then
-        local rand = math.random()
-        if rand <= 0.5 then
+        if math.random() <= 0.5 then
             for woundType, _ in pairs(wounds) do
-                if table.HasValue(canHeal, woundType) then
-                    if wounds[woundType][bodyPart] then
-                        dbt.removeWound(ply, woundType, bodyPart)
-                        healed = true
-                        break
-                    end
+                if table.HasValue(canHeal, woundType) and wounds[woundType][bodyPart] then
+                    dbt.removeWound(ply, woundType, bodyPart)
+                    healed = true
+                    break
                 end
             end
         end
     end
     
-    return healed
+    return healed or true
 end
 
-net.Receive("dbt.StartMedicationMinigame", function(len, sender)
-    local target = net.ReadEntity()
-    
-    if not IsValid(sender) or not sender:Alive() then return end
-    if not IsValid(target) or not target:Alive() then return end
-    
-    sender:Freeze(true)
-    sender.dbt_IsMedicating = true
-    
-    timer.Create("dbt_MedicationFreeze_" .. sender:SteamID(), 10, 1, function()
-        if IsValid(sender) then
-            sender:Freeze(false)
-            sender.dbt_IsMedicating = false
-        end
-    end)
-end)
-
-net.Receive("dbt.ApplyMedication", function(len, sender)
+net.Receive("dbt.StartMedicationProcess", function(len, sender)
     local target = net.ReadEntity()
     local itemId = net.ReadUInt(16)
     local bodyPart = net.ReadString()
     local position = net.ReadUInt(16)
-    local effectiveness = net.ReadFloat()
-    
-    if IsValid(sender) then
-        sender:Freeze(false)
-        sender.dbt_IsMedicating = false
-        timer.Remove("dbt_MedicationFreeze_" .. sender:SteamID())
-    end
     
     if not IsValid(sender) or not sender:Alive() then return end
     if not IsValid(target) or not target:Alive() then return end
@@ -317,77 +301,140 @@ net.Receive("dbt.ApplyMedication", function(len, sender)
         return
     end
     
-    dbt.inventory.removeitem(sender, position)
+    sender:Freeze(true)
+    sender.dbt_MedicationTarget = target
+    sender.dbt_MedicationData = {
+        itemId = itemId,
+        bodyPart = bodyPart,
+        position = position,
+        itemData = itemData,
+        item = item
+    }
     
-    if effectiveness <= 0 then
-        netstream.Start(sender, 'dbt/NewNotification', 3, {
-            icon = 'materials/dbt/notifications/notifications_main.png', 
-            title = 'Лечение', 
-            titlecolor = Color(215, 63, 65), 
-            notiftext = 'Процедура провалена! Медикамент потрачен.'
-        })
-        return
-    end
+    netstream.Start(nil, "dbt/change/sq/anim", sender, "gesture_item_place")
     
-    local success = false
-    if itemData.OnUse then
-        itemData.OnUse(target, itemData, item.meta or {}, {position = position, bodyPart = bodyPart, effectiveness = effectiveness})
-        success = true
-    elseif itemData.medicine then
-        success = dbt.UseMedicaments(target, itemData.medicine, bodyPart, effectiveness)
-    end
-    
-    local resultMessage = ""
-    local resultColor = Color(82, 204, 117)
-    
-    if success then
-        if effectiveness >= 0.75 then
-            resultMessage = itemData.name .. ' применён отлично! (100%)'
-            resultColor = Color(82, 204, 117)
-        elseif effectiveness >= 0.5 then
-            resultMessage = itemData.name .. ' применён хорошо (75%)'
-            resultColor = Color(222, 193, 49)
-        else
-            resultMessage = itemData.name .. ' применён удовлетворительно (50%)'
-            resultColor = Color(222, 193, 49)
+    timer.Create("MedicationAnim_" .. sender:SteamID(), 2, 2, function()
+        if IsValid(sender) and sender.dbt_MedicationTarget then
+            netstream.Start(nil, "dbt/change/sq/anim", sender, "gesture_item_place")
         end
-    else
-        resultMessage = itemData.name .. ' не помог! Повторите процедуру.'
-        resultColor = Color(234, 30, 33)
-    end
+    end)
     
-    netstream.Start(sender, 'dbt/NewNotification', 3, {
-        icon = 'materials/icons/medical_chest.png', 
-        title = 'Лечение', 
-        titlecolor = resultColor, 
-        notiftext = resultMessage
-    })
+    sender:EmitSound('actions/search/search.mp3')
     
-    if target ~= sender then
-        netstream.Start(target, 'dbt/NewNotification', 3, {
+    timer.Create("dbt_MedicationProcess_" .. sender:SteamID(), 5, 1, function()
+        if not IsValid(sender) or not sender.dbt_MedicationTarget then return end
+        
+        local currentTarget = sender.dbt_MedicationTarget
+        local medData = sender.dbt_MedicationData
+        
+        sender:Freeze(false)
+        sender:StopSound('actions/search/search.mp3')
+        timer.Remove("MedicationAnim_" .. sender:SteamID())
+        
+        if not IsValid(currentTarget) or not currentTarget:Alive() then
+            netstream.Start(sender, 'dbt/NewNotification', 3, {
+                icon = 'materials/dbt/notifications/notifications_main.png', 
+                title = 'Ошибка', 
+                titlecolor = Color(215, 63, 65), 
+                notiftext = 'Цель недоступна!'
+            })
+            sender.dbt_MedicationTarget = nil
+            sender.dbt_MedicationData = nil
+            return
+        end
+        
+        local dist = sender:GetPos():Distance(currentTarget:GetPos())
+        if dist > 150 then
+            netstream.Start(sender, 'dbt/NewNotification', 3, {
+                icon = 'materials/dbt/notifications/notifications_main.png', 
+                title = 'Ошибка', 
+                titlecolor = Color(215, 63, 65), 
+                notiftext = 'Цель слишком далеко!'
+            })
+            sender.dbt_MedicationTarget = nil
+            sender.dbt_MedicationData = nil
+            return
+        end
+        
+        dbt.inventory.removeitem(sender, medData.position)
+        
+        local effectiveness = math.Rand(0.5, 1.0)
+        
+        if effectiveness <= 0 then
+            netstream.Start(sender, 'dbt/NewNotification', 3, {
+                icon = 'materials/dbt/notifications/notifications_main.png', 
+                title = 'Лечение', 
+                titlecolor = Color(215, 63, 65), 
+                notiftext = 'Процедура провалена! Медикамент потрачен.'
+            })
+            sender.dbt_MedicationTarget = nil
+            sender.dbt_MedicationData = nil
+            return
+        end
+        
+        local success = false
+        if medData.itemData.OnUse then
+            medData.itemData.OnUse(currentTarget, medData.itemData, medData.item.meta or {}, {position = medData.position, bodyPart = medData.bodyPart, effectiveness = effectiveness})
+            success = true
+        elseif medData.itemData.medicine then
+            success = dbt.UseMedicaments(currentTarget, medData.itemData.medicine, medData.bodyPart, effectiveness)
+        end
+        
+        local resultMessage = ""
+        local resultColor = Color(82, 204, 117)
+        
+        if success then
+            if effectiveness >= 0.75 then
+                resultMessage = medData.itemData.name .. ' применён отлично! (100%)'
+                resultColor = Color(82, 204, 117)
+            elseif effectiveness >= 0.5 then
+                resultMessage = medData.itemData.name .. ' применён хорошо (75%)'
+                resultColor = Color(222, 193, 49)
+            else
+                resultMessage = medData.itemData.name .. ' применён удовлетворительно (50%)'
+                resultColor = Color(222, 193, 49)
+            end
+        else
+            resultMessage = medData.itemData.name .. ' не помог! Повторите процедуру.'
+            resultColor = Color(234, 30, 33)
+        end
+        
+        netstream.Start(sender, 'dbt/NewNotification', 3, {
             icon = 'materials/icons/medical_chest.png', 
             title = 'Лечение', 
             titlecolor = resultColor, 
-            notiftext = sender:Nick() .. ' применил: ' .. resultMessage
+            notiftext = resultMessage
         })
-    end
-    
-    if dbt and dbt.health and dbt.health.update then
-        netstream.Start(target, "dbt.health.update")
-    end
-    
-    if openobserve and openobserve.Log then
-        openobserve.Log({
-            event = "medication_use",
-            name = sender:Nick(),
-            steamid = sender:SteamID(),
-            item = itemData.name,
-            target = target:Nick(),
-            body_part = bodyPart,
-            effectiveness = effectiveness,
-            success = success
-        })
-    end
+        
+        if currentTarget ~= sender then
+            netstream.Start(currentTarget, 'dbt/NewNotification', 3, {
+                icon = 'materials/icons/medical_chest.png', 
+                title = 'Лечение', 
+                titlecolor = resultColor, 
+                notiftext = sender:Nick() .. ' применил: ' .. resultMessage
+            })
+        end
+        
+        if dbt and dbt.health and dbt.health.update then
+            netstream.Start(currentTarget, "dbt.health.update")
+        end
+        
+        if openobserve and openobserve.Log then
+            openobserve.Log({
+                event = "medication_use",
+                name = sender:Nick(),
+                steamid = sender:SteamID(),
+                item = medData.itemData.name,
+                target = currentTarget:Nick(),
+                body_part = medData.bodyPart,
+                effectiveness = effectiveness,
+                success = success
+            })
+        end
+        
+        sender.dbt_MedicationTarget = nil
+        sender.dbt_MedicationData = nil
+    end)
 end)
 
 hook.Add("PlayerButtonDown", "dbt.MedicationMenuKey", function(ply, button)
@@ -395,5 +442,20 @@ hook.Add("PlayerButtonDown", "dbt.MedicationMenuKey", function(ply, button)
         net.Start("dbt.OpenMedicationMenu")
             net.WriteEntity(ply)
         net.Send(ply)
+    end
+end)
+
+hook.Add("PlayerDisconnected", "dbt.CleanupMedication", function(ply)
+    timer.Remove("dbt_MedicationProcess_" .. ply:SteamID())
+    timer.Remove("MedicationAnim_" .. ply:SteamID())
+end)
+
+hook.Add("PlayerDeath", "dbt.CancelMedicationOnDeath", function(victim, inflictor, attacker)
+    if victim.dbt_MedicationTarget then
+        victim:StopSound('actions/search/search.mp3')
+        timer.Remove("dbt_MedicationProcess_" .. victim:SteamID())
+        timer.Remove("MedicationAnim_" .. victim:SteamID())
+        victim.dbt_MedicationTarget = nil
+        victim.dbt_MedicationData = nil
     end
 end)

@@ -8,7 +8,3 @@ if SERVER then
     util.AddNetworkString("dbt.ApplyMedication")
     util.AddNetworkString("dbt.OpenMedicationMenu")
 end
-
-if CLIENT then
-    include("cl_medication_minigame.lua")
-end

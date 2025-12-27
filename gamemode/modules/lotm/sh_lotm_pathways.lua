@@ -342,6 +342,10 @@ LOTM.SequenceNames[22] = {
     [0] = "Луна",
 }
 
+<<<<<<< HEAD
+=======
+-- Функции для работы с последовательностями
+>>>>>>> d91069482183f2bffeadcd5549a7797711402222
 function LOTM.GetPathwayName(pathwayId)
     if not LOTM.PathwaysList[pathwayId] then return "Неизвестный путь" end
     return LOTM.PathwaysList[pathwayId].name

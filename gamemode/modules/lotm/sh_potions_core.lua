@@ -29,15 +29,22 @@ function LOTM.CreatePotion(data)
     local potion = {
         UID = data.UID or "",
         Name = data.Name or "Unknown Potion",
+<<<<<<< HEAD
         Pathway = data.Pathway or 0,
+=======
+>>>>>>> d91069482183f2bffeadcd5549a7797711402222
         Sequence = data.Sequence or 9,
         Description = data.Description or "",
         Abilities = data.Abilities or {},
         DigestionRate = data.DigestionRate or 0.01,
         MadnessRisk = data.MadnessRisk or 0.1,
         Model = data.Model or "models/props_junk/PopCan01a.mdl",
+<<<<<<< HEAD
         Icon = data.Icon or "icon16/pill.png",
         Ingredients = data.Ingredients or {},
+=======
+        Icon = data.Icon or "icon16/pill.png"
+>>>>>>> d91069482183f2bffeadcd5549a7797711402222
     }
     
     return potion
@@ -71,6 +78,13 @@ function LOTM.RegisterPotion(potion)
     
     LOTM.Potions[potion.UID] = potion
     
+<<<<<<< HEAD
+=======
+    if SERVER then
+        MsgC(Color(100, 255, 100), "[LOTM] ", Color(255, 255, 255), "Registered potion: ", Color(100, 200, 255), potion.Name, " (", potion.UID, ")\n")
+    end
+    
+>>>>>>> d91069482183f2bffeadcd5549a7797711402222
     return true
 end
 
@@ -97,6 +111,7 @@ function LOTM.GetPotionsBySequence(sequence)
     return result
 end
 
+<<<<<<< HEAD
 -- Получить зелья по пути
 function LOTM.GetPotionsByPathway(pathway)
     local result = {}
@@ -220,3 +235,6 @@ function LOTM.GetPotionInventoryID(potionUID)
 end
 
 MsgC(Color(100, 255, 100), "[LOTM] ", Color(255, 255, 255), "Potion core system loaded\n")
+=======
+MsgC(Color(100, 255, 100), "[LOTM] ", Color(255, 255, 255), "Core system loaded\n")
+>>>>>>> d91069482183f2bffeadcd5549a7797711402222

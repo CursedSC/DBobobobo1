@@ -176,7 +176,11 @@ dbt.LoadFolder("lib")
 -- Загрузка LOTM и кастомных персонажей
 dbt.LoadFolder("modules/lotm")
 dbt.LoadFolder("modules/custom_characters")
+<<<<<<< HEAD
 dbt.LoadFolder("modules/movespeed")
+=======
+
+>>>>>>> d91069482183f2bffeadcd5549a7797711402222
 dbt.LoadFolder("modules")
 dbt.LoadFolder("systems")
 dbt.LoadFolder("module_re")
@@ -799,4 +803,8 @@ end
 hook.Add( "PlayerDisconnected", "PlyLeft", PlyLeft )
 
 
+<<<<<<< HEAD
 BUILD = "DBT | build 3.1 | 05.10.2025"
+=======
+BUILD = "DBT | build 3.1 | 05.10.2025"
+>>>>>>> d91069482183f2bffeadcd5549a7797711402222

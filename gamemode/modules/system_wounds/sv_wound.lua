@@ -239,6 +239,10 @@ function dbt.hasWoundOnpos(ply, wound, position)
 end
 
 function dbt.setWound(ply, wound, position, vector)
+	if DBT_IsWoundEnabled and not DBT_IsWoundEnabled(wound) then
+		return
+	end
+	
 	if !dbt.PlayersWounds[ply] then
 		dbt.PlayersWounds[ply] = {}
 	end
@@ -641,7 +645,6 @@ concommand.Add("healallw", function(ply)
 		PrintTable(infowound)
 end)
 
-
 netstream.Hook("dbt/woundsystem/setwound", function(admin, ply, woundType, position, state)
 	if !admin:IsAdmin() then return end
 	if ply:IsValid() then
@@ -650,5 +653,38 @@ netstream.Hook("dbt/woundsystem/setwound", function(admin, ply, woundType, posit
 		else
 			dbt.removeWound(ply, woundType, position)
 		end
+	end
+end)
+
+netstream.Hook("dbt/woundsystem/remove_wound_admin", function(admin, target, woundType, position)
+	if not admin:IsAdmin() then 
+		admin:ChatPrint("У вас нет прав!")
+		return 
+	end
+	
+	if not IsValid(target) then
+		target = admin
+	end
+	
+	if not target:IsValid() or not target:IsPlayer() then 
+		admin:ChatPrint("Неверная цель!")
+		return 
+	end
+	
+	if dbt.hasWoundOnpos(target, woundType, position) then
+		dbt.removeWound(target, woundType, position)
+		admin:ChatPrint("Успешно убрано ранение: " .. woundType .. " с " .. position .. " у " .. target:Nick())
+		
+		openobserve.Log({
+			event = "wound_removed_admin",
+			admin = admin:Nick(),
+			admin_steamid = admin:SteamID(),
+			target = target:Nick(),
+			target_steamid = target:SteamID(),
+			wound = woundType,
+			position = position
+		})
+	else
+		admin:ChatPrint("У " .. target:Nick() .. " нет такого ранения на данной части тела!")
 	end
 end)
