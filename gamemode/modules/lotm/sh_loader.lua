@@ -19,7 +19,7 @@ local serverFiles = {
 
 -- Client files (только клиент)
 local clientFiles = {
-    "cl_potions.lua"
+    -- cl_potions.lua не существует, убран из загрузки
 }
 
 -- Загрузка shared файлов
