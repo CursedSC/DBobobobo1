@@ -11,6 +11,13 @@ local colorButtonInactive = Color(0, 0, 0, 100)
 local colorButtonActive = Color(0, 0, 0, 200)
 local colorText = Color(255, 255, 255, 200)
 
+-- Локальные фоны для создателя персонажа
+local tableBG_creator = {
+    Material("dbt/f4/bg/f4_bg_1.png"),
+    Material("dbt/f4/bg/f4_bg_2.png"),
+    Material("dbt/f4/bg/f4_bg_3.png"),
+}
+
 -- Данные для создания персонажа
 local CharCreatorData = {
     name = "",
@@ -39,6 +46,7 @@ local CreatorStage = {
 }
 
 local CurrentStage = CreatorStage.PATHWAY_SELECT
+local CurrentBG_Creator = nil
 
 -- Функция открытия создателя персонажа
 function open_custom_character_creator()
@@ -46,7 +54,7 @@ function open_custom_character_creator()
     
     local scrw, scrh = ScrW(), ScrH()
     local a = math.random(1, 3)
-    CurrentBG = tableBG[a]
+    CurrentBG_Creator = tableBG_creator[a]
     
     -- Сброс данных
     CharCreatorData = {
@@ -85,7 +93,7 @@ function open_custom_character_creator()
         BlurScreen(24)
         draw.RoundedBox(0, 0, 0, w, h, colorBlack)
         draw.RoundedBox(0, 0, 0, w, h, colorBlack2)
-        dbtPaint.DrawRect(CurrentBG, 0, 0, w, h, colorBG)
+        dbtPaint.DrawRect(CurrentBG_Creator, 0, 0, w, h, colorBG)
         dbtPaint.DrawRect(bg_creator, 0, 0, w, h)
         
         -- Заголовок в зависимости от этапа
@@ -244,8 +252,6 @@ function CreateSequenceSelection(parent)
     local pathway = LOTM.PathwaysList[CharCreatorData.pathway]
     
     -- Информация о выбранном пути
-    draw.SimpleText = draw.SimpleText or function() end
-    
     local infoPanel = vgui.Create("DPanel", parent)
     infoPanel:SetPos(dbtPaint.WidthSource(100), dbtPaint.HightSource(150))
     infoPanel:SetSize(dbtPaint.WidthSource(1720), dbtPaint.HightSource(100))
