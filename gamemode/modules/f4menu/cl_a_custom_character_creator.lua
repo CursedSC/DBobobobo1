@@ -1,4 +1,4 @@
--- Custom Character Creator UI v3.0
+-- Custom Character Creator UI v3.1
 -- Система создания кастомного персонажа
 -- Выбор веры, роста, модели с D&D характеристиками
 
@@ -30,11 +30,10 @@ local tableBG_creator = {
 local CharCreatorData = {
     name = "",
     talent = "",
-    faith = nil,        -- Вера вместо пути
-    height = 1.0,       -- Рост (0.5 - 1.5)
-    model = "",         -- Выбранная модель
+    faith = nil,
+    height = 1.0,
+    model = "",
     
-    -- Характеристики (генерируются рандомно как в D&D)
     maxHealth = 100,
     maxHungry = 100,
     maxThird = 100,
@@ -47,10 +46,10 @@ local CharCreatorData = {
 
 -- Этапы создания
 local CreatorStage = {
-    FAITH_SELECT = 1,    -- Выбор веры
-    INFO_INPUT = 2,      -- Ввод имени и таланта
-    APPEARANCE = 3,      -- Внешность (рост и модель)
-    STATS_ROLL = 4,      -- Бросок характеристик
+    FAITH_SELECT = 1,
+    INFO_INPUT = 2,
+    APPEARANCE = 3,
+    STATS_ROLL = 4,
 }
 
 local CurrentStage = CreatorStage.FAITH_SELECT
@@ -62,7 +61,11 @@ local CurrentModelPage = 1
 local ModelsPerPage = 10
 local AllPlayerModels = {}
 
--- Список вер с описаниями
+-- Для анимации раскрытия статов
+local StatsRevealTime = 0
+local StatsRevealDuration = 2.5
+
+-- Список вер
 local FaithsList = {
     {
         id = 1,
@@ -108,7 +111,7 @@ local FaithsList = {
     },
 }
 
--- Функция генерации характеристик (D&D стиль)
+-- Функция генерации характеристик
 local function RollStats()
     local stats = {}
     stats.maxHealth = math.random(8, 15) * 10
@@ -124,43 +127,27 @@ local function RollStats()
     return stats
 end
 
--- Получение списка всех моделей игроков
+-- Получение списка моделей
 local function GetAllPlayerModels()
     if #AllPlayerModels > 0 then return AllPlayerModels end
     
     local models = {}
     
-    -- Основные модели из player/
     for _, modelPath in ipairs(player_manager.AllValidModels()) do
         table.insert(models, modelPath)
     end
     
-    -- Дополнительные популярные модели
     local additionalModels = {
-        -- HL2
         "models/player/alyx.mdl",
         "models/player/barney.mdl",
         "models/player/breen.mdl",
-        "models/player/eli.mdl",
-        "models/player/gman_high.mdl",
-        "models/player/kleiner.mdl",
-        "models/player/magnusson.mdl",
-        "models/player/mossman.mdl",
-        "models/player/monk.mdl",
-        
-        -- Combine
         "models/player/combine_soldier.mdl",
-        "models/player/combine_soldier_prisonguard.mdl",
         "models/player/combine_super_soldier.mdl",
         "models/player/police.mdl",
-        "models/player/police_fem.mdl",
-        
-        -- Citizens
         "models/player/group01/female_01.mdl",
         "models/player/group01/female_02.mdl",
         "models/player/group01/female_03.mdl",
         "models/player/group01/female_04.mdl",
-        "models/player/group01/female_06.mdl",
         "models/player/group01/male_01.mdl",
         "models/player/group01/male_02.mdl",
         "models/player/group01/male_03.mdl",
@@ -170,28 +157,6 @@ local function GetAllPlayerModels()
         "models/player/group01/male_07.mdl",
         "models/player/group01/male_08.mdl",
         "models/player/group01/male_09.mdl",
-        
-        -- Refugees
-        "models/player/group02/male_02.mdl",
-        "models/player/group02/male_04.mdl",
-        "models/player/group02/male_06.mdl",
-        "models/player/group02/male_08.mdl",
-        
-        -- Medics
-        "models/player/group03/female_01.mdl",
-        "models/player/group03/female_02.mdl",
-        "models/player/group03/female_03.mdl",
-        "models/player/group03/female_04.mdl",
-        "models/player/group03/female_06.mdl",
-        "models/player/group03/male_01.mdl",
-        "models/player/group03/male_02.mdl",
-        "models/player/group03/male_03.mdl",
-        "models/player/group03/male_04.mdl",
-        "models/player/group03/male_05.mdl",
-        "models/player/group03/male_06.mdl",
-        "models/player/group03/male_07.mdl",
-        "models/player/group03/male_08.mdl",
-        "models/player/group03/male_09.mdl",
     }
     
     for _, model in ipairs(additionalModels) do
@@ -200,14 +165,12 @@ local function GetAllPlayerModels()
         end
     end
     
-    -- Сортировка по алфавиту
     table.sort(models)
-    
     AllPlayerModels = models
     return models
 end
 
--- Фильтрация моделей по поисковому запросу
+-- Фильтрация моделей
 local function FilterModels(query)
     local allModels = GetAllPlayerModels()
     
@@ -227,13 +190,24 @@ local function FilterModels(query)
     return filtered
 end
 
--- Функция отрисовки границы
-local function draw_border(w, h, color, size)
+-- ИСПРАВЛЕННАЯ функция отрисовки границы
+local function DrawBorder(x, y, w, h, borderColor, size)
     size = size or 1
-    draw.RoundedBox(0, 0, 0, w, size, color)
-    draw.RoundedBox(0, 0, size, h, color)
-    draw.RoundedBox(0, h - size, w, size, color)
-    draw.RoundedBox(0, w - size, 0, size, h, color)
+    borderColor = borderColor or Color(255, 255, 255)
+    
+    -- Проверка что color валидный
+    if not borderColor or not borderColor.r then
+        borderColor = Color(255, 255, 255)
+    end
+    
+    -- Верх
+    draw.RoundedBox(0, x, y, w, size, borderColor)
+    -- Низ
+    draw.RoundedBox(0, x, y + h - size, w, size, borderColor)
+    -- Лево
+    draw.RoundedBox(0, x, y, size, h, borderColor)
+    -- Право
+    draw.RoundedBox(0, x + w - size, y, size, h, borderColor)
 end
 
 -- Функция открытия создателя персонажа
@@ -244,7 +218,6 @@ function open_custom_character_creator()
     local a = math.random(1, 3)
     CurrentBG_Creator = tableBG_creator[a]
     
-    -- Сброс данных только при первом открытии
     if CurrentStage == CreatorStage.FAITH_SELECT then
         CharCreatorData = {
             name = "",
@@ -266,6 +239,11 @@ function open_custom_character_creator()
         CurrentModelPage = 1
     end
     
+    -- Сброс таймера анимации при входе в этап статов
+    if CurrentStage == CreatorStage.STATS_ROLL then
+        StatsRevealTime = CurTime()
+    end
+    
     dbt.f4 = vgui.Create("DFrame")
     dbt.f4:SetSize(scrw, scrh)
     dbt.f4:SetTitle("")
@@ -273,7 +251,6 @@ function open_custom_character_creator()
     dbt.f4:ShowCloseButton(false)
     dbt.f4:MakePopup()
     
-    -- Обработка ESC
     dbt.f4.OnKeyCodePressed = function(self, key)
         if key == KEY_ESCAPE then
             surface.PlaySound('ui/button_back.mp3')
@@ -325,8 +302,7 @@ function open_custom_character_creator()
     backButton:SetText("")
     backButton:SetPos(dbtPaint.WidthSource(48), dbtPaint.HightSource(984))
     backButton:SetSize(dbtPaint.WidthSource(199), dbtPaint.HightSource(55))
-    backButton.ColorBorder = colorOutLine
-    backButton.ColorBorder.a = 0
+    backButton.glowAlpha = 0
     
     backButton.DoClick = function()
         surface.PlaySound('ui/button_back.mp3')
@@ -345,13 +321,17 @@ function open_custom_character_creator()
     
     backButton.Paint = function(self, w, h)
         local hovered = self:IsHovered()
-        draw.RoundedBox(0, 0, 0, w, h, hovered and colorButtonActive or colorButtonInactive)
         
         if hovered then
-            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 255)
-            draw_border(w, h, self.ColorBorder)
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 255)
         else
-            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 0)
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 0)
+        end
+        
+        draw.RoundedBox(0, 0, 0, w, h, hovered and colorButtonActive or colorButtonInactive)
+        
+        if self.glowAlpha > 0 then
+            DrawBorder(0, 0, w, h, Color(colorOutLine.r, colorOutLine.g, colorOutLine.b, self.glowAlpha), 2)
         end
         
         draw.SimpleText("НАЗАД", "Comfortaa Light X40", w / 2, h / 2 - dbtPaint.HightSource(10), color_white, TEXT_ALIGN_CENTER)
@@ -375,7 +355,6 @@ end
 function CreateFaithSelection(parent)
     local scrw, scrh = ScrW(), ScrH()
     
-    -- Панель с верами (левая сторона)
     local faithsPanel = vgui.Create("DScrollPanel", parent)
     faithsPanel:SetPos(dbtPaint.WidthSource(60), dbtPaint.HightSource(360))
     faithsPanel:SetSize(dbtPaint.WidthSource(450), dbtPaint.HightSource(560))
@@ -385,25 +364,21 @@ function CreateFaithSelection(parent)
     sbar.Paint = function(self, w, h) draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 150)) end
     sbar.btnGrip.Paint = function(self, w, h) draw.RoundedBox(0, 0, 0, w, h, colorOutLine) end
     
-    -- Панель описания веры (правая сторона)
     local descPanel = vgui.Create("DPanel", parent)
     descPanel:SetPos(dbtPaint.WidthSource(540), dbtPaint.HightSource(360))
     descPanel:SetSize(dbtPaint.WidthSource(1320), dbtPaint.HightSource(560))
     descPanel.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 200))
-        draw_border(w, h, Color(colorOutLine.r, colorOutLine.g, colorOutLine.b, 100), 2)
+        DrawBorder(0, 0, w, h, Color(colorOutLine.r, colorOutLine.g, colorOutLine.b, 100), 2)
         
         if SelectedFaithHover then
             local faith = FaithsList[SelectedFaithHover]
             
-            -- Заголовок
             draw.SimpleText(faith.name, "Comfortaa Bold X50", w / 2, dbtPaint.HightSource(60), faith.color, TEXT_ALIGN_CENTER)
             draw.SimpleText(faith.nameEn, "Comfortaa Light X30", w / 2, dbtPaint.HightSource(120), colorText, TEXT_ALIGN_CENTER)
             
-            -- Линия
             draw.RoundedBox(0, dbtPaint.WidthSource(100), dbtPaint.HightSource(170), w - dbtPaint.WidthSource(200), 2, faith.color)
             
-            -- Описание
             local wrappedDesc = dbtPaint.WrapText(faith.desc, "Comfortaa Light X25", w - dbtPaint.WidthSource(120))
             local yOffset = dbtPaint.HightSource(230)
             for i, line in ipairs(wrappedDesc) do
@@ -415,7 +390,6 @@ function CreateFaithSelection(parent)
         end
     end
     
-    -- Создание кнопок вер
     local buttonHeight = dbtPaint.HightSource(75)
     local spacing = dbtPaint.HightSource(10)
     
@@ -424,8 +398,6 @@ function CreateFaithSelection(parent)
         faithButton:SetPos(0, (i - 1) * (buttonHeight + spacing))
         faithButton:SetSize(dbtPaint.WidthSource(430), buttonHeight)
         faithButton:SetText("")
-        
-        faithButton.ColorBorder = Color(faith.color.r, faith.color.g, faith.color.b, 100)
         faithButton.glowAlpha = 0
         
         faithButton.Paint = function(self, w, h)
@@ -433,10 +405,8 @@ function CreateFaithSelection(parent)
             
             if hovered then
                 self.glowAlpha = Lerp(FrameTime() * 8, self.glowAlpha, 60)
-                self.ColorBorder.a = Lerp(FrameTime() * 8, self.ColorBorder.a, 255)
             else
                 self.glowAlpha = Lerp(FrameTime() * 8, self.glowAlpha, 0)
-                self.ColorBorder.a = Lerp(FrameTime() * 8, self.ColorBorder.a, 100)
             end
             
             draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 180))
@@ -445,8 +415,8 @@ function CreateFaithSelection(parent)
                 draw.RoundedBox(0, 0, 0, w, h, Color(faith.color.r, faith.color.g, faith.color.b, self.glowAlpha))
             end
             
-            draw_border(w, h, self.ColorBorder, 2)
-            draw.RoundedBox(0, 0, 0, dbtPaint.WidthSource(5), h, self.ColorBorder)
+            DrawBorder(0, 0, w, h, Color(faith.color.r, faith.color.g, faith.color.b, 100 + self.glowAlpha), 2)
+            draw.RoundedBox(0, 0, 0, dbtPaint.WidthSource(5), h, faith.color)
             
             draw.SimpleText(faith.name, "Comfortaa Bold X28", dbtPaint.WidthSource(20), dbtPaint.HightSource(15), faith.color, TEXT_ALIGN_LEFT)
             draw.SimpleText(faith.nameEn, "Comfortaa Light X18", dbtPaint.WidthSource(20), dbtPaint.HightSource(48), colorText, TEXT_ALIGN_LEFT)
@@ -481,25 +451,23 @@ function CreateInfoInput(parent)
     
     local faith = FaithsList[CharCreatorData.faith]
     
-    -- Информационная панель о выбранной вере
     local infoPanel = vgui.Create("DPanel", parent)
     infoPanel:SetPos(dbtPaint.WidthSource(300), dbtPaint.HightSource(370))
     infoPanel:SetSize(dbtPaint.WidthSource(1320), dbtPaint.HightSource(120))
     infoPanel.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 180))
-        draw_border(w, h, faith.color, 3)
+        DrawBorder(0, 0, w, h, faith.color, 3)
         
         draw.SimpleText("Выбрана вера: " .. faith.name, "Comfortaa Bold X35", w / 2, dbtPaint.HightSource(35), faith.color, TEXT_ALIGN_CENTER)
         draw.SimpleText(faith.nameEn, "Comfortaa Light X25", w / 2, dbtPaint.HightSource(80), colorWhiteAlpha, TEXT_ALIGN_CENTER)
     end
     
-    -- Поля ввода
     local inputsPanel = vgui.Create("DPanel", parent)
     inputsPanel:SetPos(dbtPaint.WidthSource(300), dbtPaint.HightSource(520))
     inputsPanel:SetSize(dbtPaint.WidthSource(1320), dbtPaint.HightSource(300))
     inputsPanel.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 150))
-        draw_border(w, h, colorOutLine, 2)
+        DrawBorder(0, 0, w, h, colorOutLine, 2)
     end
     
     -- Имя
@@ -519,11 +487,8 @@ function CreateInfoInput(parent)
     nameEntry.OnChange = function(self) CharCreatorData.name = self:GetValue() end
     nameEntry.Paint = function(self, w, h)
         draw.RoundedBox(8, 0, 0, w, h, Color(20, 20, 20, 220))
-        draw_border(w, h, colorPurpleLight, 2)
-        
-        -- Внутренняя тень
+        DrawBorder(0, 0, w, h, colorPurpleLight, 2)
         draw.RoundedBox(8, 2, 2, w - 4, h - 4, Color(0, 0, 0, 80))
-        
         self:DrawTextEntryText(color_white, colorPurpleLight, color_white)
     end
     
@@ -545,7 +510,7 @@ function CreateInfoInput(parent)
     talentEntry.OnChange = function(self) CharCreatorData.talent = self:GetValue() end
     talentEntry.Paint = function(self, w, h)
         draw.RoundedBox(8, 0, 0, w, h, Color(20, 20, 20, 220))
-        draw_border(w, h, colorPurpleLight, 2)
+        DrawBorder(0, 0, w, h, colorPurpleLight, 2)
         draw.RoundedBox(8, 2, 2, w - 4, h - 4, Color(0, 0, 0, 80))
         self:DrawTextEntryText(color_white, colorPurpleLight, color_white)
     end
@@ -555,8 +520,7 @@ function CreateInfoInput(parent)
     continueButton:SetPos(dbtPaint.WidthSource(760), dbtPaint.HightSource(870))
     continueButton:SetSize(dbtPaint.WidthSource(400), dbtPaint.HightSource(70))
     continueButton:SetText("")
-    continueButton.ColorBorder = colorOutLine
-    continueButton.ColorBorder.a = 0
+    continueButton.glowAlpha = 0
     
     continueButton.Paint = function(self, w, h)
         local hovered = self:IsHovered()
@@ -566,13 +530,16 @@ function CreateInfoInput(parent)
             draw.RoundedBox(0, 0, 0, w, h, Color(50, 50, 50, 100))
             draw.SimpleText("ЗАПОЛНИТЕ ВСЕ ПОЛЯ", "Comfortaa Bold X28", w / 2, h / 2 - dbtPaint.HightSource(10), Color(150, 150, 150), TEXT_ALIGN_CENTER)
         else
+            if hovered then
+                self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 255)
+            else
+                self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 0)
+            end
+            
             draw.RoundedBox(0, 0, 0, w, h, hovered and colorButtonActive or colorButtonInactive)
             
-            if hovered then
-                self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 255)
-                draw_border(w, h, self.ColorBorder)
-            else
-                self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 0)
+            if self.glowAlpha > 0 then
+                DrawBorder(0, 0, w, h, Color(colorOutLine.r, colorOutLine.g, colorOutLine.b, self.glowAlpha), 2)
             end
             
             draw.SimpleText("ПРОДОЛЖИТЬ", "Comfortaa Bold X38", w / 2, h / 2 - dbtPaint.HightSource(10), color_white, TEXT_ALIGN_CENTER)
@@ -592,21 +559,20 @@ function CreateInfoInput(parent)
     continueButton.OnCursorEntered = function() surface.PlaySound('ui/ui_but/ui_hover.wav') end
 end
 
--- ЭТАП 3: Внешность (рост и модель)
+-- ЭТАП 3: Внешность
 function CreateAppearance(parent)
     local scrw, scrh = ScrW(), ScrH()
     
-    -- Левая панель: настройка роста и превью
+    -- Левая панель
     local leftPanel = vgui.Create("DPanel", parent)
     leftPanel:SetPos(dbtPaint.WidthSource(60), dbtPaint.HightSource(360))
     leftPanel:SetSize(dbtPaint.WidthSource(450), dbtPaint.HightSource(560))
     leftPanel.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 180))
-        draw_border(w, h, colorOutLine, 2)
+        DrawBorder(0, 0, w, h, colorOutLine, 2)
         
         draw.SimpleText("РОСТ ПЕРСОНАЖА", "Comfortaa Bold X30", w / 2, dbtPaint.HightSource(20), colorGold, TEXT_ALIGN_CENTER)
         
-        -- Отображение текущего роста
         local heightPercent = math.Round((CharCreatorData.height - 0.5) / 1.0 * 100)
         local heightText = string.format("%.2f (%.0f%%)", CharCreatorData.height, heightPercent)
         draw.SimpleText(heightText, "Comfortaa Bold X40", w / 2, dbtPaint.HightSource(120), colorWhiteAlpha, TEXT_ALIGN_CENTER)
@@ -634,7 +600,7 @@ function CreateAppearance(parent)
         draw.RoundedBox(w / 2, 0, 0, w, h, colorGold)
     end
     
-    -- Model preview (optional)
+    -- Model preview
     local modelPreview = vgui.Create("DModelPanel", leftPanel)
     modelPreview:SetPos(dbtPaint.WidthSource(75), dbtPaint.HightSource(250))
     modelPreview:SetSize(dbtPaint.WidthSource(300), dbtPaint.HightSource(280))
@@ -649,21 +615,21 @@ function CreateAppearance(parent)
     modelPreview:SetCamPos(eyepos - Vector(-40, 0, 0))
     modelPreview.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 150))
-        draw_border(w, h, colorPurpleLight, 1)
+        DrawBorder(0, 0, w, h, colorPurpleLight, 1)
     end
     
-    -- Правая панель: выбор модели с 2 вариантами поиска
+    -- Правая панель
     local rightPanel = vgui.Create("DPanel", parent)
     rightPanel:SetPos(dbtPaint.WidthSource(540), dbtPaint.HightSource(360))
     rightPanel:SetSize(dbtPaint.WidthSource(1320), dbtPaint.HightSource(560))
     rightPanel.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 180))
-        draw_border(w, h, colorOutLine, 2)
+        DrawBorder(0, 0, w, h, colorOutLine, 2)
         
         draw.SimpleText("ВЫБОР МОДЕЛИ", "Comfortaa Bold X35", w / 2, dbtPaint.HightSource(20), colorGold, TEXT_ALIGN_CENTER)
     end
     
-    -- Поисковая строка 1 (по имени файла)
+    -- Поиск 1
     local searchLabel1 = vgui.Create("DLabel", rightPanel)
     searchLabel1:SetPos(dbtPaint.WidthSource(30), dbtPaint.HightSource(70))
     searchLabel1:SetSize(dbtPaint.WidthSource(200), dbtPaint.HightSource(30))
@@ -683,11 +649,11 @@ function CreateAppearance(parent)
     end
     searchEntry1.Paint = function(self, w, h)
         draw.RoundedBox(6, 0, 0, w, h, Color(20, 20, 20, 220))
-        draw_border(w, h, colorPurpleLight, 1)
+        DrawBorder(0, 0, w, h, colorPurpleLight, 1)
         self:DrawTextEntryText(color_white, colorPurpleLight, color_white)
     end
     
-    -- Поисковая строка 2 (полный путь .mdl)
+    -- Поиск 2
     local searchLabel2 = vgui.Create("DLabel", rightPanel)
     searchLabel2:SetPos(dbtPaint.WidthSource(780), dbtPaint.HightSource(70))
     searchLabel2:SetSize(dbtPaint.WidthSource(200), dbtPaint.HightSource(30))
@@ -712,7 +678,7 @@ function CreateAppearance(parent)
     end
     searchEntry2.Paint = function(self, w, h)
         draw.RoundedBox(6, 0, 0, w, h, Color(20, 20, 20, 220))
-        draw_border(w, h, colorGreen, 1)
+        DrawBorder(0, 0, w, h, colorGreen, 1)
         self:DrawTextEntryText(color_white, colorGreen, color_white)
     end
     
@@ -726,7 +692,6 @@ function CreateAppearance(parent)
     sbar.Paint = function(self, w, h) draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 150)) end
     sbar.btnGrip.Paint = function(self, w, h) draw.RoundedBox(0, 0, 0, w, h, colorOutLine) end
     
-    -- Функция обновления списка моделей
     local function UpdateModelsList()
         modelsList:Clear()
         FilteredModels = FilterModels(ModelSearchQuery)
@@ -753,9 +718,8 @@ function CreateAppearance(parent)
                     draw.RoundedBox(4, 0, 0, w, h, Color(0, 0, 0, 120))
                 end
                 
-                draw_border(w, h, selected and colorGreen or (hovered and colorPurpleLight or Color(60, 60, 60)), 1)
+                DrawBorder(0, 0, w, h, selected and colorGreen or (hovered and colorPurpleLight or Color(60, 60, 60)), 1)
                 
-                -- Укороченный путь для отображения
                 local displayName = string.gsub(model, "models/player/", "")
                 draw.SimpleText(displayName, "Comfortaa Light X20", dbtPaint.WidthSource(15), h / 2, color_white, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
                 
@@ -774,18 +738,6 @@ function CreateAppearance(parent)
                 surface.PlaySound('ui/ui_but/ui_hover.wav')
             end
         end
-        
-        -- Информация о пагинации
-        if #FilteredModels > ModelsPerPage then
-            local totalPages = math.ceil(#FilteredModels / ModelsPerPage)
-            local paginationInfo = vgui.Create("DLabel", modelsList)
-            paginationInfo:SetPos(0, (endIndex - startIndex + 1) * (dbtPaint.HightSource(45) + dbtPaint.HightSource(5)) + dbtPaint.HightSource(10))
-            paginationInfo:SetSize(dbtPaint.WidthSource(1240), dbtPaint.HightSource(30))
-            paginationInfo:SetFont("Comfortaa Light X20")
-            paginationInfo:SetText(string.format("Страница %d из %d (всего моделей: %d)", CurrentModelPage, totalPages, #FilteredModels))
-            paginationInfo:SetTextColor(colorText)
-            paginationInfo:SetContentAlignment(5)
-        end
     end
     
     UpdateModelsList()
@@ -795,18 +747,21 @@ function CreateAppearance(parent)
     continueButton:SetPos(dbtPaint.WidthSource(760), dbtPaint.HightSource(950))
     continueButton:SetSize(dbtPaint.WidthSource(400), dbtPaint.HightSource(70))
     continueButton:SetText("")
-    continueButton.ColorBorder = colorOutLine
-    continueButton.ColorBorder.a = 0
+    continueButton.glowAlpha = 0
     
     continueButton.Paint = function(self, w, h)
         local hovered = self:IsHovered()
-        draw.RoundedBox(0, 0, 0, w, h, hovered and colorButtonActive or colorButtonInactive)
         
         if hovered then
-            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 255)
-            draw_border(w, h, self.ColorBorder)
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 255)
         else
-            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 0)
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 0)
+        end
+        
+        draw.RoundedBox(0, 0, 0, w, h, hovered and colorButtonActive or colorButtonInactive)
+        
+        if self.glowAlpha > 0 then
+            DrawBorder(0, 0, w, h, Color(colorOutLine.r, colorOutLine.g, colorOutLine.b, self.glowAlpha), 2)
         end
         
         draw.SimpleText("ПРОДОЛЖИТЬ", "Comfortaa Bold X38", w / 2, h / 2 - dbtPaint.HightSource(10), color_white, TEXT_ALIGN_CENTER)
@@ -825,28 +780,19 @@ function CreateAppearance(parent)
     continueButton.OnCursorEntered = function() surface.PlaySound('ui/ui_but/ui_hover.wav') end
 end
 
--- ЭТАП 4: Бросок характеристик
+-- ЭТАП 4: Бросок характеристик С АНИМАЦИЕЙ
 function CreateStatsRoll(parent)
     local scrw, scrh = ScrW(), ScrH()
     
-    local materialIconHealth = Material("dbt/f4/stats_icons/stat_hp.png")
-    local materialIconFood = Material("dbt/f4/stats_icons/stat_food.png")
-    local materialIconWater = Material("dbt/f4/stats_icons/stat_water.png")
-    local materialIconSleep = Material("dbt/f4/stats_icons/stat_sleep.png")
-    local materialIconSpeed = Material("dbt/f4/stats_icons/stat_speed.png")
-    local materialIconPower = Material("dbt/f4/stats_icons/stat_power.png")
-    local materialIconWeight = Material("dbt/f4/stats_icons/stat_weight.png")
-    local materialIconSlots = Material("dbt/f4/stats_icons/stat_slots.png")
-    
     local stats = {
-        {name = "Здоровье", key = "maxHealth", icon = materialIconHealth},
-        {name = "Голод", key = "maxHungry", icon = materialIconFood},
-        {name = "Жажда", key = "maxThird", icon = materialIconWater},
-        {name = "Сон", key = "maxSleep", icon = materialIconSleep},
-        {name = "Скорость", key = "runSpeed", icon = materialIconSpeed},
-        {name = "Урон кулаками", key = "fistsDamage", icon = materialIconPower},
-        {name = "Макс. вес (кг)", key = "maxKG", icon = materialIconWeight},
-        {name = "Слотов инвентаря", key = "maxInventory", icon = materialIconSlots},
+        {name = "Здоровье", key = "maxHealth", icon = "❤", color = Color(231, 76, 60)},
+        {name = "Голод", key = "maxHungry", icon = "🍖", color = Color(230, 126, 34)},
+        {name = "Жажда", key = "maxThird", icon = "💧", color = Color(52, 152, 219)},
+        {name = "Сон", key = "maxSleep", icon = "💤", color = Color(155, 89, 182)},
+        {name = "Скорость", key = "runSpeed", icon = "⚡", color = Color(241, 196, 15)},
+        {name = "Урон кулаками", key = "fistsDamage", icon = "👊", color = Color(192, 57, 43)},
+        {name = "Макс. вес (кг)", key = "maxKG", icon = "📦", color = Color(149, 165, 166)},
+        {name = "Слотов инвентаря", key = "maxInventory", icon = "🎒", color = Color(46, 204, 113)},
     }
     
     local statsPanel = vgui.Create("DPanel", parent)
@@ -854,43 +800,86 @@ function CreateStatsRoll(parent)
     statsPanel:SetSize(dbtPaint.WidthSource(1320), dbtPaint.HightSource(450))
     statsPanel.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 180))
-        draw_border(w, h, colorOutLine, 2)
+        DrawBorder(0, 0, w, h, colorOutLine, 2)
         
-        draw.SimpleText("РЕЗУЛЬТАТ БРОСКА", "Comfortaa Bold X35", w / 2, dbtPaint.HightSource(20), colorPurpleLight, TEXT_ALIGN_CENTER)
+        -- Анимированный заголовок
+        local titleAlpha = math.Clamp((CurTime() - StatsRevealTime) / 0.3 * 255, 0, 255)
+        draw.SimpleText("РЕЗУЛЬТАТ БРОСКА", "Comfortaa Bold X35", w / 2, dbtPaint.HightSource(20), Color(colorPurpleLight.r, colorPurpleLight.g, colorPurpleLight.b, titleAlpha), TEXT_ALIGN_CENTER)
         
-        local yPos = dbtPaint.HightSource(80)
-        local leftX = dbtPaint.WidthSource(100)
-        local rightX = dbtPaint.WidthSource(700)
+        local yPos = dbtPaint.HightSource(90)
+        local leftX = dbtPaint.WidthSource(80)
+        local rightX = dbtPaint.WidthSource(680)
+        local cardHeight = dbtPaint.HightSource(80)
+        local spacing = dbtPaint.HightSource(10)
         
         for i, stat in ipairs(stats) do
-            local xPos = (i <= 4) and leftX or rightX
-            local currentY = yPos + ((i <= 4) and (i - 1) or (i - 5)) * dbtPaint.HightSource(85)
+            -- Задержка для каждой карточки
+            local delay = 0.4 + (i - 1) * 0.25
+            local progress = math.Clamp((CurTime() - StatsRevealTime - delay) / 0.4, 0, 1)
             
-            if stat.icon then
-                dbtPaint.DrawRect(stat.icon, xPos, currentY, stat.icon:Width(), stat.icon:Height())
+            if progress > 0 then
+                local xPos = (i <= 4) and leftX or rightX
+                local currentY = yPos + ((i <= 4) and (i - 1) or (i - 5)) * (cardHeight + spacing)
+                
+                -- Плавное появление снизу вверх
+                local slideOffset = (1 - progress) * 30
+                currentY = currentY + slideOffset
+                
+                local alpha = progress * 255
+                
+                -- Карточка характеристики
+                local cardW = dbtPaint.WidthSource(580)
+                local cardH = cardHeight
+                
+                -- Фон карточки
+                draw.RoundedBox(8, xPos, currentY, cardW, cardH, Color(20, 20, 20, 200 * progress))
+                
+                -- Цветная левая полоса
+                draw.RoundedBox(8, xPos, currentY, dbtPaint.WidthSource(8), cardH, Color(stat.color.r, stat.color.g, stat.color.b, alpha))
+                
+                -- Граница
+                DrawBorder(xPos, currentY, cardW, cardH, Color(stat.color.r, stat.color.g, stat.color.b, alpha * 0.5), 2)
+                
+                -- Иконка
+                draw.SimpleText(stat.icon, "Comfortaa Bold X35", xPos + dbtPaint.WidthSource(40), currentY + cardH / 2, Color(255, 255, 255, alpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+                
+                -- Название
+                draw.SimpleText(stat.name, "Comfortaa Light X25", xPos + dbtPaint.WidthSource(90), currentY + dbtPaint.HightSource(20), Color(colorText.r, colorText.g, colorText.b, alpha), TEXT_ALIGN_LEFT)
+                
+                -- Значение с эффектом свечения
+                local value = tostring(CharCreatorData[stat.key])
+                
+                -- Свечение за текстом
+                if progress > 0.8 then
+                    local glowAlpha = (progress - 0.8) / 0.2 * 80
+                    draw.SimpleText(value, "Comfortaa Bold X40", xPos + dbtPaint.WidthSource(90) + 2, currentY + dbtPaint.HightSource(48) + 2, Color(stat.color.r, stat.color.g, stat.color.b, glowAlpha), TEXT_ALIGN_LEFT)
+                end
+                
+                draw.SimpleText(value, "Comfortaa Bold X40", xPos + dbtPaint.WidthSource(90), currentY + dbtPaint.HightSource(48), Color(stat.color.r, stat.color.g, stat.color.b, alpha), TEXT_ALIGN_LEFT)
             end
-            
-            local value = tostring(CharCreatorData[stat.key])
-            draw.SimpleText(value, "Comfortaa Light X35", xPos + dbtPaint.WidthSource(50), currentY, color_white, TEXT_ALIGN_LEFT)
         end
     end
     
+    -- Кнопка рероллa
     local rerollButton = vgui.Create("DButton", parent)
     rerollButton:SetPos(dbtPaint.WidthSource(610), dbtPaint.HightSource(870))
     rerollButton:SetSize(dbtPaint.WidthSource(300), dbtPaint.HightSource(70))
     rerollButton:SetText("")
-    rerollButton.ColorBorder = colorPurpleLight
-    rerollButton.ColorBorder.a = 0
+    rerollButton.glowAlpha = 0
     
     rerollButton.Paint = function(self, w, h)
         local hovered = self:IsHovered()
-        draw.RoundedBox(0, 0, 0, w, h, hovered and colorButtonActive or colorButtonInactive)
         
         if hovered then
-            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 255)
-            draw_border(w, h, self.ColorBorder)
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 255)
         else
-            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 0)
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 0)
+        end
+        
+        draw.RoundedBox(0, 0, 0, w, h, hovered and colorButtonActive or colorButtonInactive)
+        
+        if self.glowAlpha > 0 then
+            DrawBorder(0, 0, w, h, Color(colorPurpleLight.r, colorPurpleLight.g, colorPurpleLight.b, self.glowAlpha), 2)
         end
         
         draw.SimpleText("🎲 ПЕРЕБРОСИТЬ", "Comfortaa Bold X32", w / 2, h / 2 - dbtPaint.HightSource(10), color_white, TEXT_ALIGN_CENTER)
@@ -902,27 +891,32 @@ function CreateStatsRoll(parent)
         for k, v in pairs(stats) do
             CharCreatorData[k] = v
         end
+        StatsRevealTime = CurTime()
         dbt.f4:Close()
         open_custom_character_creator()
     end
     rerollButton.OnCursorEntered = function() surface.PlaySound('ui/ui_but/ui_hover.wav') end
     
+    -- Кнопка принять
     local acceptButton = vgui.Create("DButton", parent)
     acceptButton:SetPos(dbtPaint.WidthSource(930), dbtPaint.HightSource(870))
     acceptButton:SetSize(dbtPaint.WidthSource(350), dbtPaint.HightSource(70))
     acceptButton:SetText("")
-    acceptButton.ColorBorder = colorOutLine
-    acceptButton.ColorBorder.a = 0
+    acceptButton.glowAlpha = 0
     
     acceptButton.Paint = function(self, w, h)
         local hovered = self:IsHovered()
-        draw.RoundedBox(0, 0, 0, w, h, hovered and Color(colorOutLine.r, colorOutLine.g, colorOutLine.b, 200) or colorButtonInactive)
         
         if hovered then
-            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 255)
-            draw_border(w, h, Color(255, 255, 255, 255), 2)
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 255)
         else
-            self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 0)
+            self.glowAlpha = Lerp(FrameTime() * 5, self.glowAlpha, 0)
+        end
+        
+        draw.RoundedBox(0, 0, 0, w, h, hovered and Color(colorOutLine.r, colorOutLine.g, colorOutLine.b, 200) or colorButtonInactive)
+        
+        if self.glowAlpha > 0 then
+            DrawBorder(0, 0, w, h, Color(255, 255, 255, self.glowAlpha), 2)
         end
         
         draw.SimpleText("СОЗДАТЬ ПЕРСОНАЖА", "Comfortaa Bold X28", w / 2, h / 2 - dbtPaint.HightSource(10), color_white, TEXT_ALIGN_CENTER)
@@ -994,4 +988,4 @@ net.Receive("dbt.CustomChar.Create", function()
     end
 end)
 
-print("[Custom Character Creator] v3.0 загружен - Выбор веры, роста, модели + D&D система")
+print("[Custom Character Creator] v3.1 загружен - Исправлены ошибки + улучшена анимация")
