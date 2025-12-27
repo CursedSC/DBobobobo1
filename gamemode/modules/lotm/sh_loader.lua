@@ -8,7 +8,8 @@ MsgC(Color(100, 255, 100), "[LOTM] ", Color(255, 255, 255), "Starting LOTM syste
 -- Shared files (загружаются и на сервере, и на клиенте)
 local sharedFiles = {
     "sh_potions_core.lua",
-    "sh_potions_data.lua"
+    "sh_potions_data.lua",
+    "sh_hitbox_system.lua"  -- Система хитбоксов и атак
 }
 
 -- Server files (только сервер)
@@ -19,7 +20,7 @@ local serverFiles = {
 
 -- Client files (только клиент)
 local clientFiles = {
-    -- cl_potions.lua не существует, убран из загрузки
+    "cl_keybind_menu.lua"  -- Меню управления
 }
 
 -- Загрузка shared файлов
