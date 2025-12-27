@@ -506,18 +506,18 @@ buildSettingsType[SETTING_NUMSLIDER] = function(parent, inf)
     settingsPanel:SetSize(dbtPaint.WidthSource(225), dbtPaint.HightSource(30))
     settingsPanel:SetPos(dbtPaint.WidthSource(635), dbtPaint.HightSource(10))
     local pxlPercentage = dbtPaint.WidthSource(225) / 25
-    settingsPanel.Paint = function(self, w, h)
+    settingsPanel.Paint = function(self, panelW, panelH)
         local percent = self.Value
         for k = 1, 24 do
             local b = (percent > k)
             draw.RoundedBox(0, 0 + dbtPaint.WidthSource(9) * (k - 1), 0, dbtPaint.WidthSource(7), dbtPaint.HightSource(30), b and colorSettingsNUMSLIDER or colorSettingsSoundUnactive2 )
         end
         if self:IsHovered() and input.IsMouseDown( MOUSE_LEFT ) then
-            local x, y = input.GetCursorPos()
-            local x, y = self:ScreenToLocal( x, y )
-            draw.RoundedBox(0, x, y, 3, 3, colorSettingsPanelActive)
+            local cursorX, cursorY = input.GetCursorPos()
+            local localX, localY = self:ScreenToLocal( cursorX, cursorY )
+            draw.RoundedBox(0, localX, localY, 3, 3, colorSettingsPanelActive)
 
-            local a = math.Round(x / pxlPercentage)
+            local a = math.Round(localX / pxlPercentage)
             local nv = a
             if self.Value != (nv) then settings.Set(inf.settingInfo.name, nv)  end
             self.Value = nv
