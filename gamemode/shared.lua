@@ -1,5 +1,5 @@
 GM.Team = ""
-GM.Name = "Danganronpa Broken Timeline"
+GM.Name = "LOTM: Zero Abyss"
 GM.Author = "Demit"
 dbt = dbt or {}
 dbt.music = dbt.music or {} 
@@ -104,23 +104,23 @@ cloud_reload = function(path, filename)
 
     if reload == "sv" or reload == "init" then
         include_sv(path)
-        MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "Danganronpa Broken Timeline", Color(255, 55, 50), "] ", color_white, "Прогрузка ", Color(100, 100, 250), "SERVER", color_white, " filename: " .. filename .. "\n")
+        MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "LOTM: Zero Abyss", Color(255, 55, 50), "] ", color_white, "Прогрузка ", Color(100, 100, 250), "SERVER", color_white, " filename: " .. filename .. "\n")
     elseif reload == "cl" or reload == "cl_init" then
         include_cl(path)
-        MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "Danganronpa Broken Timeline", Color(255, 55, 50), "] ", color_white, "Прогрузка ", Color(255, 136, 0), "CLIENT", color_white, " filename: " .. filename .. "\n")
+        MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "LOTM: Zero Abyss", Color(255, 55, 50), "] ", color_white, "Прогрузка ", Color(255, 136, 0), "CLIENT", color_white, " filename: " .. filename .. "\n")
     elseif reload == "sh" or reload == "shared" then
         include_sh(path)
-        MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "Danganronpa Broken Timeline", Color(255, 55, 50), "] ",  color_white, "Прогрузка ", Color(120, 225, 100), "SHARED", color_white, " filename: " .. filename .. "\n")
+        MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "LOTM: Zero Abyss", Color(255, 55, 50), "] ",  color_white, "Прогрузка ", Color(120, 225, 100), "SHARED", color_white, " filename: " .. filename .. "\n")
     else
         include_sh(path)
-        MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "Danganronpa Broken Timeline", Color(255, 55, 50), "] ",  color_white, "Прогрузка ", Color(120, 225, 100), "SHARED", color_white, " filename: " .. filename .. "\n")
+        MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "LOTM: Zero Abyss", Color(255, 55, 50), "] ",  color_white, "Прогрузка ", Color(120, 225, 100), "SHARED", color_white, " filename: " .. filename .. "\n")
     end
 end
 
 lib_reload = function(path, filename)
     local reload = string.lower(string.sub(filename, 1, 2 ))
     include_sv(path)
-    --MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "Danganronpa Broken Timeline", Color(255, 55, 50), "] ", color_white, "Прогрузка ", Color(100, 100, 250), "SERVER", color_white, " filename: " .. filename .. "\n")
+    --MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "LOTM: Zero Abyss", Color(255, 55, 50), "] ", color_white, "Прогрузка ", Color(100, 100, 250), "SERVER", color_white, " filename: " .. filename .. "\n")
     include_cl(path)
     include_sh(path)
 end
@@ -176,11 +176,7 @@ dbt.LoadFolder("lib")
 -- Загрузка LOTM и кастомных персонажей
 dbt.LoadFolder("modules/lotm")
 dbt.LoadFolder("modules/custom_characters")
-<<<<<<< HEAD
 dbt.LoadFolder("modules/movespeed")
-=======
-
->>>>>>> d91069482183f2bffeadcd5549a7797711402222
 dbt.LoadFolder("modules")
 dbt.LoadFolder("systems")
 dbt.LoadFolder("module_re")
@@ -803,8 +799,4 @@ end
 hook.Add( "PlayerDisconnected", "PlyLeft", PlyLeft )
 
 
-<<<<<<< HEAD
 BUILD = "DBT | build 3.1 | 05.10.2025"
-=======
-BUILD = "DBT | build 3.1 | 05.10.2025"
->>>>>>> d91069482183f2bffeadcd5549a7797711402222

@@ -41,7 +41,7 @@ net.Receive("dbt.music.Off", function()
 end)
 
 hook.Add( "InitPostEntity", "some_unique_name", function()
-  chat.AddText( Color( 139, 12, 161 ), "[Danganronpa Broken Timeline]", Color( 100, 255, 100 ), " Установка x64 Версии Garry's mod значительно повысит производительность компьютера." )
+  chat.AddText( Color( 139, 12, 161 ), "[LOTM: Zero Abyss]", Color( 100, 255, 100 ), " Установка x64 Версии Garry's mod значительно повысит производительность компьютера." )
 end )
 
 hook.Add("PlayerBindPress","dbt.misc.flash",function(ply,bind,pressed)

@@ -688,7 +688,7 @@ dbt.inventory.items[38] = {
         text[#text+1] = "Диск от ноутбука."
         text[#text+1] = true
         text[#text+1] = color_white
-        text[#text+1] = "Название: "..self.meta.Author
+        text[#text+1] = "Название: "..(self.meta and self.meta.Author or "Неизвестно")
         return text
     end
 }

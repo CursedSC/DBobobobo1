@@ -18,7 +18,7 @@ netstream.Hook("player/start/work", function(workshop)
 		if table.HasValue(pl_addons, addons[i]) then 
 		else 
 			steamworks.FileInfo( addons[i], function( result ) 
-				chat.AddText( Color( 255, 0, 0 ), "[Danganronpa Broken Timeline]", Color( 255, 255, 255 ), " Отсуствует нужный аддон - ".. result.title )
+				chat.AddText( Color( 255, 0, 0 ), "[LOTM: Zero Abyss]", Color( 255, 255, 255 ), " Отсуствует нужный аддон - ".. result.title )
 			end)
 		end
 	end

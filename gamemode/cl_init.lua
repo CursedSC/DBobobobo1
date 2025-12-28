@@ -1,4 +1,8 @@
-include("shared.lua")--
+include("shared.lua")
+
+-- =============================================
+-- CONVARS
+-- =============================================
 CreateClientConVar("thw_evidice", "icons/1.png", true, false, "")
 CreateClientConVar("name_evidice", "icons/1.png", true, false, "")
 CreateClientConVar("desc_evidice", "icons/1.png", true, false, "")
@@ -14,585 +18,657 @@ ScreenWidth = ScrW()
 ScreenHeight = ScrH()
 charactersInGame = {}
 
-hook.Add( 'OnScreenSizeChanged', 'local', function()
- 
+hook.Add('OnScreenSizeChanged', 'local', function()
     ScreenWidth = ScrW()
     ScreenHeight = ScrH()
-
-end )
-
+end)
 
 netstream.Hook("dbt/config/init", function(id)
     config[id].init()
 end)
 
-local _folig = {}
-_folig[#_folig + 1] = {
-  name = "Сыр",
-  mdl = "models/props_everything/cheeseswiss.mdl",
-  icon = Material("icons/food_cheese.png", "smooth"),
-  food = 15,
-  time = 5,
-  id = 7
-}
-
-_folig[#_folig + 1] = {
-  name = "Помидор",
-  mdl = "models/props_everything/tomato.mdl",
-  icon = Material("icons/food_tomato.png", "smooth"),
-  food = 10,
-  time = 5,
-  id = 8
-}
-
-_folig[#_folig + 1] = {
-  name = "Арбуз",
-  mdl = "models/props_everything/watermelonslice.mdl",
-  icon = Material("icons/food_watermelon.png", "smooth"),
-  food = 20,
-  time = 8,
-  id = 9
-}
-
-
-_folig[#_folig + 1] = {
-    name = "Коктейль",
-    mdl = "models/props_everything/cocktail.mdl",
-    icon = Material("icons/drink_cocktail.png", "smooth"),
-    water = 35,
-    time = 4,
-    id = 10
-}
-
-_folig[#_folig + 1] = {
-    name = "Газировка",
-    mdl = "models/props_everything/cansoda.mdl",
-    icon = Material("icons/drink_energy.png", "smooth"),
-    water = 35,
-    time = 4,
-    id = 11
-}
-
-_folig[#_folig + 1] = {
-    name = "Вода",
-    mdl = "models/props_everything/waterbottle.mdl",
-    icon = Material("icons/drink_water.png", "smooth"),
-    water = 45,
-    time = 5,
-    id = 12
-}
-
-_folig[#_folig + 1] = {
-    name = "Молоко",
-    mdl = "models/props_everything/milk.mdl",
-    icon = Material("icons/drink_milk.png", "smooth"),
-    water = 50,
-    time = 6,
-    id = 14
-}
-
-_folig[#_folig + 1] = {
-    name = "Панта",
-    mdl = "models/player/dewobedil/danganronpa/monokubs/props/panta.mdl",
-    icon = Material("icons/panta.png", "smooth"),
-    water = 40,
-    time = 5,
-    id = 15
-}
-
-
-
-_polka = {}
-_polka[#_polka + 1] = {
-    name = "Яблоко",
-    mdl = "models/props_everything/applered.mdl",
-    icon = Material("icons/food_apple.png", "smooth"),
-    food = 15,
-    time = 5,
-    id = 17
-}
-_polka[#_polka + 1] = {
-    name = "Печенье",
-    mdl = "models/props_everything/cookie.mdl",
-    icon = Material("icons/food_cookie.png", "smooth"),
-    food = 10,
-    time = 5,
-    id = 18
-}
-_polka[#_polka + 1] = {
-    name = "Кукуруза",
-    mdl = "models/props_everything/corn.mdl",
-    icon = Material("icons/food_corn.png", "smooth"),
-    food = 20,
-    time = 6,
-    id = 19
-}
-_polka[#_polka + 1] = {
-    name = "Пончик",
-    mdl = "models/props_everything/donutsprinkles.mdl",
-    icon = Material("icons/food_donut.png", "smooth"),
-    food = 15,
-    time = 5,
-    id = 20
-}
-_polka[#_polka + 1] = {
-    name = "Кофе",
-    mdl = "models/props_everything/coffee.mdl",
-    icon = Material("icons/drink_coffee2.png", "smooth"),
-    water = 50,
-    time = 6,
-    id = 13
-}
-
-_polka[#_polka + 1] = {
-    name = "Вино",
-    mdl = "models/props_everything/winebottle.mdl",
-    icon = Material("icons/drink_bottle.png", "smooth"),
-    water = 100,
-    time = 25,
-    id = 16
-}
-
-_furngug = {}
-_furngug[#_furngug + 1] = {
-    name = "Кусочек пиццы",
-    mdl = "models/props_everything/pizzaslice.mdl",
-    icon = Material("icons/food_pizza.png", "smooth"),
-    food = 40,
-    cost = 1,
-    time = 8,
-    id = 21
-}
-_furngug[#_furngug + 1] = {
-    name = "Бургер",
-    mdl = "models/props_everything/hamburger.mdl",
-    icon = Material("icons/food_sandwich.png", "smooth"),
-    food = 60,
-    cost = 2,
-    time = 10,
-    id = 22
-}
-_furngug[#_furngug + 1] = {
-    name = "Куриная ножка",
-    mdl = "models/props_everything/chickendrumstick.mdl",
-    icon = Material("icons/food_turkey.png", "smooth"),
-    food = 50,
-    cost = 2,
-    time = 6,
-    id = 23
-}
-_furngug[#_furngug + 1] = {
-    name = "Стейк",
-    mdl = "models/props_everything/steak.mdl",
-    icon = Material("icons/food_steak2.png", "smooth"),
-    food = 80,
-    cost = 4,
-    time = 12,
-    id = 24
-}
-_furngug[#_furngug + 1] = {
-    name = "Пирог",
-    mdl = "models/props_everything/applepie.mdl",
-    icon = Material("icons/food_pie2.png", "smooth"),
-    food = 70,
-    cost = 3,
-    time = 10,
-    id = 5
-}
-
-_furngug[#_furngug + 1] = {
-    name = "Торт",
-    mdl = "models/props_everything/cake.mdl",
-    icon = Material("icons/food_cake.png", "smooth"),
-    food = 85,
-    cost = 4,
-    time = 15,
-    id = 6
-}
-
-hook.Add( "PopulateEntities", "AddEntityContent", function( pnlContent, tree, node )
-  local Categorised = {}
-
-  -- Add this list into the tormoil
-  local SpawnableEntities = list.Get( "SpawnableEntities" )
-  if ( SpawnableEntities ) then
-    for k, v in pairs( SpawnableEntities ) do
-
-      local Category = v.Category or "Other"
-      if ( !isstring( Category ) ) then Category = tostring( Category ) end
-      Categorised[ Category ] = Categorised[ Category ] or {}
-
-      v.SpawnName = k
-      table.insert( Categorised[ Category ], v )
-
-    end
-  end
-
-  --
-  -- Add a tree node for each category
-  --
-  for CategoryName, v in SortedPairs( Categorised ) do
-
-    standrtdbtcat = (CategoryName == "DBT - Entity")
-    local node = tree:AddNode( CategoryName, "icon16/bricks.png" )
-    if CategoryName == "DBT - Entity" then
-      FoodDBTCategory = tree:AddNode( "DBT - Food", "icon16/bricks.png" )
-      TrueCatForPos = node
-    end
-
-      -- When we click on the node - populate it using this function
-    node.DoPopulate = function( self )
-
-      -- If we've already populated it - forget it.
-      if ( self.PropPanel ) then return end
-
-      -- Create the container panel
-      self.PropPanel = vgui.Create( "ContentContainer", pnlContent )
-      self.PropPanel:SetVisible( false )
-      self.PropPanel:SetTriggerSpawnlistChange( false )
-
-      for k, ent in SortedPairsByMemberValue( v, "PrintName" ) do
-
-        spawnmenu.CreateContentIcon( ent.ScriptedEntityType or "entity", self.PropPanel, {
-          nicename  = ent.PrintName or ent.ClassName,
-          spawnname = ent.SpawnName,
-          material  = ent.IconOverride or "entities/" .. ent.SpawnName .. ".png",
-          admin   = ent.AdminOnly
-        } )
-
-      end
-      if TrueCatForPos == self then
-        local ent = dbt.inventory.items[26]
-        local a = spawnmenu.CreateContentIcon( "entity", self.PropPanel, {
-          nicename  = ent.name,
-          spawnname = "asdasdas",
-          material  = "",
-          admin   = false
-        } )
-        a.DoClick = function()
-          netstream.Start("dbt/food/spawn", ent.mdl, ent.food, ent.id, ent.water)
-        end
-        local ent = dbt.inventory.items[27]
-        local a = spawnmenu.CreateContentIcon( "entity", self.PropPanel, {
-          nicename  = ent.name,
-          spawnname = "asdasdas",
-          material  = "",
-          admin   = false
-        } )
-        a.DoClick = function()
-          netstream.Start("dbt/food/spawn", ent.mdl, ent.food, ent.id, ent.water)
-        end
-      end
-
-
-
-
-    end
-
-    -- If we click on the node populate it and switch to it.
-    node.DoClick = function( self )
-
-      self:DoPopulate()
-      pnlContent:SwitchPanel( self.PropPanel )
-
-    end
-
-  end
-
-
-
-  -- Select the first node
-  local FirstNode = tree:Root():GetChildNode( 0 )
-  if ( IsValid( FirstNode ) ) then
-    FirstNode:InternalDoClick()
-  end
-
-
-    FoodDBTCategory.DoPopulate = function( self )
-
-
-
-      -- Create the container panel
-      self.PropPanel = vgui.Create( "ContentContainer", pnlContent )
-      self.PropPanel:SetVisible( true )
-      self.PropPanel:SetTriggerSpawnlistChange( false )
-
-      for k, ent in SortedPairsByMemberValue( _folig, "PrintName" ) do
-
-       local a = spawnmenu.CreateContentIcon( "entity", self.PropPanel, {
-          nicename  = ent.name,
-          spawnname = "asdasdas",
-          material  = "",
-          admin   = false
-        } )
-       a.DoClick = function()
-        netstream.Start("dbt/food/spawn", ent.mdl, ent.food, ent.id, ent.water)
-        end
-
-      end
-      for k, ent in SortedPairsByMemberValue( _polka, "PrintName" ) do
-
-       local a = spawnmenu.CreateContentIcon( "entity", self.PropPanel, {
-          nicename  = ent.name,
-          spawnname = "asdasdas",
-          material  = "",
-          admin   = false
-        } )
-        a.DoClick = function()
-          netstream.Start("dbt/food/spawn", ent.mdl, ent.food, ent.id, ent.water)
-        end
-
-      end
-      for k, ent in SortedPairsByMemberValue( _furngug, "PrintName" ) do
-
-       local a = spawnmenu.CreateContentIcon( "entity", self.PropPanel, {
-          nicename  = ent.name,
-          spawnname = "asdasdas",
-          material  = "",
-          admin   = false
-        } )
-
-       a.DoClick = function()
-        netstream.Start("dbt/food/spawn", ent.mdl, ent.food, ent.id, ent.water)
-        end
-      end
-
-    end
-
-    FoodDBTCategory.DoClick = function( self )
-
-      self:DoPopulate()
-      pnlContent:SwitchPanel( self.PropPanel )
-
-    end
-end)
-
-
-local INVENTORY_CATEGORY_ORDER = {
-  "Еда",
-  "Вода",
-  "Медицина",
-  "Оружие",
-  "Патроны",
-  "LOTM Зелья",
-  "LOTM Артефакты",
-  "LOTM Ингредиенты",
-  "Валюта",
-  "Остальное",
-}
-
-local INVENTORY_CATEGORY_ICONS = {
-  ["Еда"] = "icon16/cake.png",
-  ["Вода"] = "icon16/cup.png",
-  ["Медицина"] = "icon16/heart.png",
-  ["Оружие"] = "icon16/gun.png",
-  ["Патроны"] = "icon16/bullet_black.png",
-  ["LOTM Зелья"] = "icon16/ruby.png",
-  ["LOTM Артефакты"] = "icon16/star.png",
-  ["LOTM Ингредиенты"] = "icon16/package.png",
-  ["Валюта"] = "icon16/coins.png",
-  ["Остальное"] = "icon16/box.png",
-}
-
-if not dbtInventoryFontsCreated then
-  surface.CreateFont("DBTInventory_NameLarge", {
-    font = "Trebuchet MS",
-    size = 18,
-    weight = 600,
+-- =============================================
+-- ШРИФТЫ ДЛЯ SPAWN MENU
+-- =============================================
+surface.CreateFont("LOTM_SpawnMenu_Title", {
+    font = "Roboto",
+    size = 14,
+    weight = 700,
     antialias = true,
-  })
+})
 
-  surface.CreateFont("DBTInventory_NameSmall", {
-    font = "Trebuchet MS",
+surface.CreateFont("LOTM_SpawnMenu_Small", {
+    font = "Roboto",
+    size = 12,
+    weight = 500,
+    antialias = true,
+})
+
+surface.CreateFont("LOTM_SpawnMenu_Tiny", {
+    font = "Roboto",
     size = 10,
-    weight = 600,
+    weight = 400,
     antialias = true,
-  })
+})
 
-  dbtInventoryFontsCreated = true
+-- =============================================
+-- ЦВЕТОВАЯ ПАЛИТРА ПРОЕКТА
+-- =============================================
+local colorOutLine = Color(211, 25, 202)
+local colorBlack = Color(0, 0, 0, 230)
+local colorBlack2 = Color(49, 0, 54, 40)
+local colorBG = Color(255, 255, 255, 60)
+local colorText = Color(255, 255, 255)
+local colorTextDim = Color(150, 150, 150)
+local colorPanelBG = Color(20, 18, 25, 240)
+local colorItemBG = Color(30, 28, 38, 250)
+local colorItemHover = Color(50, 40, 65, 255)
+
+-- =============================================
+-- РЕДКОСТИ
+-- =============================================
+local RARITY_COLORS = {
+    [1] = {name = "Обычный", color = Color(180, 180, 180)},
+    [2] = {name = "Необычный", color = Color(100, 255, 100)},
+    [3] = {name = "Редкий", color = Color(100, 150, 255)},
+    [4] = {name = "Эпический", color = Color(200, 100, 255)},
+    [5] = {name = "Легендарный", color = Color(255, 200, 50)},
+    [6] = {name = "Божественный", color = Color(255, 255, 200)},
+    [7] = {name = "Проклятый", color = Color(150, 50, 50)},
+}
+
+-- =============================================
+-- КАТЕГОРИИ ИНВЕНТАРЯ
+-- =============================================
+local INVENTORY_CATEGORIES = {
+    {id = "all", name = "Все предметы", icon = "icon16/package.png", color = Color(211, 25, 202)},
+    {id = "artifact", name = "Артефакты", icon = "icon16/ruby.png", color = Color(255, 200, 100)},
+    {id = "food", name = "Еда", icon = "icon16/cake.png", color = Color(255, 180, 100)},
+    {id = "water", name = "Вода", icon = "icon16/cup.png", color = Color(100, 180, 255)},
+    {id = "medicine", name = "Медицина", icon = "icon16/heart.png", color = Color(255, 100, 100)},
+    {id = "weapon", name = "Оружие", icon = "icon16/gun.png", color = Color(200, 200, 200)},
+    {id = "ammo", name = "Патроны", icon = "icon16/bullet_black.png", color = Color(150, 150, 150)},
+    {id = "tools", name = "Инструменты", icon = "icon16/wrench.png", color = Color(255, 200, 50)},
+    {id = "keys", name = "Ключи", icon = "icon16/key.png", color = Color(255, 215, 0)},
+    {id = "documents", name = "Документы", icon = "icon16/page_white_text.png", color = Color(200, 200, 255)},
+    {id = "currency", name = "Валюта", icon = "icon16/coins.png", color = Color(255, 215, 0)},
+    {id = "other", name = "Остальное", icon = "icon16/box.png", color = Color(180, 180, 180)},
+}
+
+-- =============================================
+-- ТИПЫ LOTM АРТЕФАКТОВ
+-- =============================================
+local LOTM_ARTIFACT_TYPES = {
+    {type = nil, name = "Все", icon = "icon16/star.png", color = Color(211, 25, 202)},
+    {type = "divine", name = "Божественные", icon = "icon16/weather_sun.png", color = Color(255, 255, 200)},
+    {type = "cursed", name = "Проклятые", icon = "icon16/exclamation.png", color = Color(150, 50, 50)},
+    {type = "grade_0", name = "Seq 0", icon = "icon16/award_star_gold_3.png", color = Color(255, 255, 100)},
+    {type = "grade_1", name = "Seq 1", icon = "icon16/award_star_gold_2.png", color = Color(255, 200, 50)},
+    {type = "grade_2", name = "Seq 2", icon = "icon16/award_star_gold_1.png", color = Color(255, 150, 50)},
+    {type = "grade_3", name = "Seq 3", icon = "icon16/award_star_silver_3.png", color = Color(255, 100, 200)},
+    {type = "grade_4", name = "Seq 4", icon = "icon16/award_star_silver_2.png", color = Color(200, 100, 255)},
+    {type = "grade_5", name = "Seq 5", icon = "icon16/award_star_silver_1.png", color = Color(150, 100, 255)},
+    {type = "grade_6", name = "Seq 6", icon = "icon16/award_star_bronze_3.png", color = Color(100, 150, 255)},
+    {type = "grade_7", name = "Seq 7", icon = "icon16/award_star_bronze_2.png", color = Color(100, 200, 255)},
+    {type = "grade_8", name = "Seq 8", icon = "icon16/award_star_bronze_1.png", color = Color(100, 255, 100)},
+    {type = "grade_9", name = "Seq 9", icon = "icon16/asterisk_yellow.png", color = Color(200, 200, 200)},
+    {type = "sealed", name = "Запечатанные", icon = "icon16/lock.png", color = Color(150, 150, 150)},
+}
+
+-- =============================================
+-- ОПРЕДЕЛЕНИЕ КАТЕГОРИИ ПРЕДМЕТА
+-- =============================================
+local function DetectItemCategory(itemData)
+    if itemData.artifact or itemData.lotmArtifact then return "artifact" end
+    if itemData.ammo then return "ammo" end
+    if itemData.weapon then return "weapon" end
+    if itemData.medicine then return "medicine" end
+    if itemData.food and not itemData.water then return "food" end
+    if itemData.water and not itemData.food then return "water" end
+    if itemData.food and itemData.water then return "food" end
+    if itemData.currency then return "currency" end
+    if itemData.key or itemData.keys or (itemData.name and string.find(string.lower(itemData.name or ""), "ключ")) then return "keys" end
+    if itemData.document or itemData.monopad then return "documents" end
+    if itemData.tool then return "tools" end
+    return "other"
 end
 
-local function DetectInventoryCategory(itemData)
-  if itemData.ammo then return "Патроны" end
-  if itemData.weapon then return "Оружие" end
-  if itemData.medicine then return "Медицина" end
-  if itemData.food then return "Еда" end
-  if itemData.water then return "Вода" end
-  if itemData.lotmPotion then return "LOTM Зелья" end
-  if itemData.lotmArtifact then return "LOTM Артефакты" end
-  if itemData.ingredient then return "LOTM Ингредиенты" end
-  if itemData.currency then return "Валюта" end
-  return "Остальное"
+-- =============================================
+-- ПОЛУЧЕНИЕ ЦВЕТА
+-- =============================================
+local function GetCategoryColor(catId)
+    for _, cat in ipairs(INVENTORY_CATEGORIES) do
+        if cat.id == catId then return cat.color end
+    end
+    return Color(180, 180, 180)
 end
 
-local function GatherInventoryItems()
-  local categorized = {}
-  for _, name in ipairs(INVENTORY_CATEGORY_ORDER) do
-    categorized[name] = {}
-  end
-
-  for id, data in pairs(dbt.inventory.items or {}) do
-    if istable(data) and data.mdl and data.mdl ~= "" then
-      local category = DetectInventoryCategory(data)
-      table.insert(categorized[category], { id = id, data = data })
-    end
-  end
-
-  return categorized
+local function GetRarityColor(rarityId)
+    local rarity = RARITY_COLORS[rarityId]
+    return rarity and rarity.color or Color(180, 180, 180)
 end
 
-local function CreateInventoryContentPanel()
-  local root = vgui.Create("DPanel")
-  root:SetPaintBackground(false)
-
-  local tree = root:Add("DTree")
-  tree:Dock(LEFT)
-  tree:SetWidth(220)
-  tree:DockMargin(0, 0, 8, 0)
-
-  local contentScroll = root:Add("DScrollPanel")
-  contentScroll:Dock(FILL)
-
-  local iconSize = dbtPaint.WidthSource(100)
-  local nameHeight = 22
-  local spacing = 6
-  local currentGrid
-  local activeCategory
-  local activeEntries = {}
-  local repopulating = false
-
-  local function clearGrid()
-    if not IsValid(currentGrid) then return end
-    currentGrid:Remove()
-    currentGrid = nil
-  end
-
-  local function computeColumns()
-    local available = contentScroll:GetWide()
-    if available <= 0 then
-      available = root:GetWide() - tree:GetWide() - 16
+local function GetArtifactColor(artifactType)
+    for _, t in ipairs(LOTM_ARTIFACT_TYPES) do
+        if t.type == artifactType then return t.color end
     end
-    available = math.max(available, iconSize)
-    local cols = math.floor((available + spacing) / (iconSize + spacing))
-    return math.max(cols, 1)
-  end
+    return Color(255, 255, 255)
+end
 
-  local function populateCategory(categoryName, entries, fromResize)
-    if repopulating then return end
-    repopulating = true
-
-    if not fromResize then
-      activeCategory = categoryName
-      activeEntries = entries
+-- =============================================
+-- СОЗДАНИЕ КАРТОЧКИ ПРЕДМЕТА
+-- =============================================
+local function CreateItemCard(parent, size, model, name, color, rarity, onClick, onRightClick, tooltip)
+    local itemPanel = vgui.Create("DPanel", parent)
+    itemPanel:SetSize(size, size + 28)
+    
+    local rarityColor = rarity and GetRarityColor(rarity) or color
+    
+    itemPanel.hovered = false
+    itemPanel.Paint = function(self, w, h)
+        local bgColor = self.hovered and colorItemHover or colorItemBG
+        draw.RoundedBox(6, 0, 0, w, h, bgColor)
+        
+        -- Полоса редкости/категории сверху
+        draw.RoundedBoxEx(6, 0, 0, w, 3, rarityColor, true, true, false, false)
+        
+        -- Свечение редкости при наведении
+        if self.hovered and rarity and rarity >= 3 then
+            local glowAlpha = 30 + math.sin(CurTime() * 3) * 15
+            draw.RoundedBox(6, 0, 0, w, h, Color(rarityColor.r, rarityColor.g, rarityColor.b, glowAlpha))
+        end
+        
+        -- Рамка при наведении
+        if self.hovered then
+            surface.SetDrawColor(colorOutLine.r, colorOutLine.g, colorOutLine.b, 200)
+            surface.DrawOutlinedRect(0, 0, w, h, 1)
+        end
     end
-
-    clearGrid()
-
-    currentGrid = contentScroll:Add("DGrid")
-    currentGrid:Dock(TOP)
-    currentGrid:SetColWide(iconSize)
-    currentGrid:SetRowHeight(iconSize + nameHeight)
-
-    local columns = computeColumns()
-    currentGrid:SetCols(columns)
-
-    for _, entry in ipairs(entries) do
-      local itemData = entry.data
-      local itemPanel = vgui.Create("DPanel")
-      itemPanel:SetSize(iconSize, iconSize + nameHeight)
-      itemPanel.Paint = nil
-
-      local icon = vgui.Create("DModelPanel", itemPanel)
-      icon:SetSize(iconSize, iconSize)
-      icon:SetPos(0, 0)
-      icon:SetModel(itemData.mdl)
-      icon:SetTooltip(itemData.name or "")
-      icon.LayoutEntity = function() return end
-
-      if IsValid(icon.Entity) then
+    
+    -- Модель предмета
+    local icon = vgui.Create("DModelPanel", itemPanel)
+    icon:SetSize(size - 12, size - 12)
+    icon:SetPos(6, 6)
+    icon:SetModel(model or "models/props_junk/garbage_takeoutcarton001a.mdl")
+    icon.LayoutEntity = function() return end
+    
+    if IsValid(icon.Entity) then
         local mn, mx = icon.Entity:GetRenderBounds()
-        local size = 0
-        size = math.max(size, math.abs(mn.x) + math.abs(mx.x))
-        size = math.max(size, math.abs(mn.y) + math.abs(mx.y))
-        size = math.max(size, math.abs(mn.z) + math.abs(mx.z))
-
+        local modelSize = math.max(
+            math.abs(mn.x) + math.abs(mx.x),
+            math.abs(mn.y) + math.abs(mx.y),
+            math.abs(mn.z) + math.abs(mx.z)
+        )
         icon:SetFOV(45)
-        icon:SetCamPos(Vector(size, size, size))
+        icon:SetCamPos(Vector(modelSize, modelSize, modelSize))
         icon:SetLookAt((mn + mx) * 0.5)
-      end
-
-      local button = vgui.Create("DButton", icon)
-      button:SetSize(iconSize, iconSize)
-      button:SetText("")
-      button:SetToolTip(itemData.name or "")
-      button.DoClick = function()
-        RunConsoleCommand("AddItemn__", entry.id)
-      end
-      button.DoRightClick = function()
-        local menu = DermaMenu()
-        menu:AddOption("Копировать", function()
-          SetClipboardText(entry.id)
-        end)
-        menu:Open()
-      end
-      button.Paint = nil
-
-      local displayName = tostring(itemData.name or "")
-      local label = vgui.Create("DPanel", itemPanel)
-      label:SetSize(iconSize, nameHeight)
-      label:SetPos(0, iconSize)
-      label:SetPaintBackground(false)
-      label.Paint = function(_, w, _)
-        local length = utf8.len(displayName) or string.len(displayName)
-        local fontToUse = (length > 10) and "Comfortaa X12" or "Comfortaa X18"
-        draw.DrawText(displayName, fontToUse, w * 0.5, 0, color_white, TEXT_ALIGN_CENTER)
-      end
-
-      currentGrid:AddItem(itemPanel)
     end
-
-    local colsForHeight = currentGrid:GetCols() or 1
-    local rows = math.ceil(#entries / math.max(colsForHeight, 1))
-    currentGrid:SetTall(rows * (iconSize + nameHeight + spacing))
-
-    contentScroll:GetCanvas():InvalidateLayout(true)
-    contentScroll:InvalidateLayout(true)
-
-    repopulating = false
-  end
-
-  contentScroll.OnSizeChanged = function()
-    if not activeCategory or repopulating then return end
-    timer.Simple(0, function()
-      if not IsValid(contentScroll) then return end
-      if not activeCategory or not activeEntries then return end
-      populateCategory(activeCategory, activeEntries, true)
-    end)
-  end
-
-  local firstNode
-
-  for _, categoryName in ipairs(INVENTORY_CATEGORY_ORDER) do
-    local node = tree:AddNode(categoryName, INVENTORY_CATEGORY_ICONS[categoryName] or "icon16/box.png")
-
-    node.DoClick = function()
-      local categorized = GatherInventoryItems()
-      populateCategory(categoryName, categorized[categoryName] or {})
+    
+    -- Название
+    local nameLabel = vgui.Create("DLabel", itemPanel)
+    nameLabel:SetPos(3, size - 6)
+    nameLabel:SetSize(size - 6, 28)
+    
+    -- Сокращаем длинные названия
+    local displayName = name or "???"
+    if string.len(displayName) > 12 then
+        displayName = string.sub(displayName, 1, 10) .. ".."
     end
-
-    if not firstNode then
-      firstNode = node
+    
+    nameLabel:SetText(displayName)
+    nameLabel:SetWrap(true)
+    nameLabel:SetFont("LOTM_SpawnMenu_Small")
+    nameLabel:SetTextColor(rarityColor)
+    nameLabel:SetContentAlignment(5)
+    
+    -- Кнопка
+    local button = vgui.Create("DButton", itemPanel)
+    button:SetSize(size, size + 28)
+    button:SetPos(0, 0)
+    button:SetText("")
+    button.Paint = nil
+    
+    button.OnCursorEntered = function()
+        itemPanel.hovered = true
     end
-  end
-
-  if IsValid(firstNode) then
-    firstNode:InternalDoClick()
-  end
-
-  return root
+    
+    button.OnCursorExited = function()
+        itemPanel.hovered = false
+    end
+    
+    button.DoClick = function()
+        if onClick then onClick() end
+        surface.PlaySound("ui/buttonclickrelease.wav")
+    end
+    
+    button.DoRightClick = function()
+        if onRightClick then onRightClick() end
+    end
+    
+    if tooltip then
+        button:SetTooltip(tooltip)
+    end
+    
+    return itemPanel
 end
 
-spawnmenu.AddCreationTab("Предметы", CreateInventoryContentPanel, "icon16/application_view_tile.png", 4)
+-- =============================================
+-- СОЗДАНИЕ КОНТЕНТА СПАВН-МЕНЮ
+-- =============================================
+local function CreateSpawnMenuContent()
+    local root = vgui.Create("DPanel")
+    root:SetPaintBackground(false)
+    
+    -- Левая панель - дерево категорий
+    local treePanel = vgui.Create("DPanel", root)
+    treePanel:Dock(LEFT)
+    treePanel:SetWidth(200)
+    treePanel:DockMargin(0, 0, 8, 0)
+    treePanel.Paint = function(self, w, h)
+        draw.RoundedBox(6, 0, 0, w, h, colorPanelBG)
+        
+        -- Заголовок
+        draw.SimpleText("КАТЕГОРИИ", "LOTM_SpawnMenu_Title", w/2, 12, colorOutLine, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+        surface.SetDrawColor(colorOutLine.r, colorOutLine.g, colorOutLine.b, 100)
+        surface.DrawRect(10, 24, w - 20, 1)
+    end
+    
+    local tree = vgui.Create("DTree", treePanel)
+    tree:Dock(FILL)
+    tree:DockMargin(5, 30, 5, 5)
+    tree.Paint = function() end
+    
+    -- Правая панель - сетка предметов
+    local contentPanel = vgui.Create("DPanel", root)
+    contentPanel:Dock(FILL)
+    contentPanel.currentTitle = "Все предметы"
+    contentPanel.Paint = function(self, w, h)
+        draw.RoundedBox(6, 0, 0, w, h, colorPanelBG)
+        
+        -- Заголовок
+        draw.SimpleText(self.currentTitle or "Предметы", "LOTM_SpawnMenu_Title", 15, 12, colorText, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        surface.SetDrawColor(colorOutLine.r, colorOutLine.g, colorOutLine.b, 100)
+        surface.DrawRect(10, 24, w - 20, 1)
+    end
+    
+    local contentScroll = vgui.Create("DScrollPanel", contentPanel)
+    contentScroll:Dock(FILL)
+    contentScroll:DockMargin(5, 30, 5, 5)
+    
+    local sbar = contentScroll:GetVBar()
+    sbar:SetWide(8)
+    sbar.Paint = function(self, w, h) draw.RoundedBox(4, 0, 0, w, h, Color(30, 30, 40)) end
+    sbar.btnGrip.Paint = function(self, w, h) draw.RoundedBox(4, 0, 0, w, h, colorOutLine) end
+    
+    local currentGrid = nil
+    
+    local function ClearGrid()
+        if IsValid(currentGrid) then
+            currentGrid:Remove()
+        end
+        currentGrid = nil
+    end
+    
+    -- =============================================
+    -- ЗАПОЛНЕНИЕ ПРЕДМЕТАМИ ИНВЕНТАРЯ
+    -- =============================================
+    local function PopulateItems(categoryId, categoryName)
+        ClearGrid()
+        contentPanel.currentTitle = categoryName or "Предметы"
+        
+        currentGrid = vgui.Create("DIconLayout", contentScroll)
+        currentGrid:Dock(TOP)
+        currentGrid:SetSpaceX(6)
+        currentGrid:SetSpaceY(6)
+        
+        if not dbt or not dbt.inventory or not dbt.inventory.items then
+            local emptyLabel = vgui.Create("DLabel", currentGrid)
+            emptyLabel:SetText("Инвентарь не загружен")
+            emptyLabel:SetFont("LOTM_SpawnMenu_Small")
+            emptyLabel:SetTextColor(colorTextDim)
+            emptyLabel:SizeToContents()
+            return
+        end
+        
+        local items = {}
+        for id, data in pairs(dbt.inventory.items) do
+            if istable(data) and data.mdl and data.mdl ~= "" then
+                local itemCategory = DetectItemCategory(data)
+                if not categoryId or categoryId == "all" or itemCategory == categoryId then
+                    table.insert(items, {id = id, data = data, category = itemCategory})
+                end
+            end
+        end
+        
+        table.sort(items, function(a, b)
+            -- Сначала по редкости (если есть), потом по имени
+            local rarityA = a.data.rarity or 1
+            local rarityB = b.data.rarity or 1
+            if rarityA ~= rarityB then return rarityA > rarityB end
+            return (a.data.name or "") < (b.data.name or "")
+        end)
+        
+        for _, entry in ipairs(items) do
+            local itemData = entry.data
+            local catColor = GetCategoryColor(entry.category)
+            local rarity = itemData.rarity
+            
+            local tooltipLines = {
+                "[" .. (RARITY_COLORS[rarity] and RARITY_COLORS[rarity].name or entry.category) .. "]",
+                itemData.name or "???",
+                "ID: " .. tostring(entry.id),
+            }
+            if itemData.food then table.insert(tooltipLines, "Еда: +" .. itemData.food) end
+            if itemData.water then table.insert(tooltipLines, "Вода: +" .. itemData.water) end
+            if itemData.kg then table.insert(tooltipLines, "Вес: " .. itemData.kg .. " кг") end
+            
+            local tooltipText = table.concat(tooltipLines, "\n")
+            
+            local card = CreateItemCard(
+                currentGrid,
+                85,
+                itemData.mdl,
+                itemData.name or tostring(entry.id),
+                catColor,
+                rarity,
+                function()
+                    -- Выдать предмет
+                    RunConsoleCommand("AddItemn__", tostring(entry.id))
+                end,
+                function()
+                    local menu = DermaMenu()
+                    menu:AddOption("Выдать 1", function()
+                        RunConsoleCommand("AddItemn__", tostring(entry.id))
+                    end):SetIcon("icon16/add.png")
+                    menu:AddOption("Выдать 5", function()
+                        for i = 1, 5 do
+                            RunConsoleCommand("AddItemn__", tostring(entry.id))
+                        end
+                    end):SetIcon("icon16/add.png")
+                    menu:AddSpacer()
+                    menu:AddOption("Копировать ID", function()
+                        SetClipboardText(tostring(entry.id))
+                    end):SetIcon("icon16/page_copy.png")
+                    menu:Open()
+                end,
+                tooltipText
+            )
+            
+            currentGrid:Add(card)
+        end
+        
+        if #items == 0 then
+            local emptyLabel = vgui.Create("DLabel", currentGrid)
+            emptyLabel:SetText("Нет предметов в этой категории")
+            emptyLabel:SetFont("LOTM_SpawnMenu_Small")
+            emptyLabel:SetTextColor(colorTextDim)
+            emptyLabel:SizeToContents()
+        end
+        
+        contentScroll:GetCanvas():InvalidateLayout(true)
+    end
+    
+    -- =============================================
+    -- ЗАПОЛНЕНИЕ LOTM АРТЕФАКТАМИ
+    -- =============================================
+    local function PopulateLOTMArtifacts(filterType, categoryName)
+        ClearGrid()
+        contentPanel.currentTitle = categoryName or "LOTM Артефакты"
+        
+        currentGrid = vgui.Create("DIconLayout", contentScroll)
+        currentGrid:Dock(TOP)
+        currentGrid:SetSpaceX(6)
+        currentGrid:SetSpaceY(6)
+        
+        -- Проверяем оба источника артефактов
+        local artifacts = {}
+        
+        -- Из LOTM.Artifacts.Registry
+        if LOTM and LOTM.Artifacts and LOTM.Artifacts.Registry then
+            for artifactId, artifactData in pairs(LOTM.Artifacts.Registry) do
+                if not filterType or artifactData.type == filterType then
+                    table.insert(artifacts, {
+                        id = artifactId,
+                        data = artifactData,
+                        source = "lotm"
+                    })
+                end
+            end
+        end
+        
+        -- Из LOTM.ArtifactTemplates.Registry
+        if LOTM and LOTM.ArtifactTemplates and LOTM.ArtifactTemplates.Registry then
+            for artifactId, artifactData in pairs(LOTM.ArtifactTemplates.Registry) do
+                table.insert(artifacts, {
+                    id = artifactId,
+                    data = artifactData,
+                    source = "template",
+                    invId = artifactData.inventoryId
+                })
+            end
+        end
+        
+        if #artifacts == 0 then
+            local emptyLabel = vgui.Create("DLabel", currentGrid)
+            emptyLabel:SetText("Артефакты не найдены")
+            emptyLabel:SetFont("LOTM_SpawnMenu_Small")
+            emptyLabel:SetTextColor(colorTextDim)
+            emptyLabel:SizeToContents()
+            return
+        end
+        
+        table.sort(artifacts, function(a, b)
+            return (a.data.name or "") < (b.data.name or "")
+        end)
+        
+        for _, entry in ipairs(artifacts) do
+            local artifactData = entry.data
+            local typeColor = GetArtifactColor(artifactData.type)
+            
+            -- Цвет редкости для шаблонных артефактов
+            local rarity = nil
+            if entry.source == "template" and artifactData.rarity then
+                typeColor = artifactData.rarity.color or typeColor
+                rarity = artifactData.rarity.id
+            end
+            
+            local tooltipText = string.format("[%s] %s\n\n%s", 
+                artifactData.type or (artifactData.rarity and artifactData.rarity.name) or "Артефакт", 
+                artifactData.name or entry.id,
+                artifactData.description or "Нет описания")
+            
+            local card = CreateItemCard(
+                currentGrid,
+                85,
+                artifactData.model or "models/props_lab/huladoll.mdl",
+                artifactData.name or entry.id,
+                typeColor,
+                rarity,
+                function()
+                    -- Выдаём артефакт
+                    if entry.invId then
+                        -- Через инвентарь
+                        RunConsoleCommand("AddItemn__", tostring(entry.invId))
+                    else
+                        -- Через команду LOTM
+                        RunConsoleCommand("lotm_give_artifact", LocalPlayer():Name(), entry.id)
+                    end
+                end,
+                function()
+                    local menu = DermaMenu()
+                    menu:AddOption("Выдать артефакт", function()
+                        if entry.invId then
+                            RunConsoleCommand("AddItemn__", tostring(entry.invId))
+                        else
+                            RunConsoleCommand("lotm_give_artifact", LocalPlayer():Name(), entry.id)
+                        end
+                    end):SetIcon("icon16/ruby.png")
+                    if entry.source == "lotm" then
+                        menu:AddOption("Выдать SWEP", function()
+                            RunConsoleCommand("lotm_give_artifact_weapon", entry.id)
+                        end):SetIcon("icon16/wand.png")
+                    end
+                    menu:AddSpacer()
+                    menu:AddOption("Копировать ID", function()
+                        SetClipboardText(tostring(entry.id))
+                    end):SetIcon("icon16/page_copy.png")
+                    menu:Open()
+                end,
+                tooltipText
+            )
+            
+            currentGrid:Add(card)
+        end
+        
+        contentScroll:GetCanvas():InvalidateLayout(true)
+    end
+    
+    -- =============================================
+    -- ЗАПОЛНЕНИЕ ИНГРЕДИЕНТАМИ
+    -- =============================================
+    local function PopulateIngredients(categoryId, categoryName)
+        ClearGrid()
+        contentPanel.currentTitle = categoryName or "Ингредиенты"
+        
+        currentGrid = vgui.Create("DIconLayout", contentScroll)
+        currentGrid:Dock(TOP)
+        currentGrid:SetSpaceX(6)
+        currentGrid:SetSpaceY(6)
+        
+        if not LOTM or not LOTM.Ingredients or not LOTM.Ingredients.Registry then 
+            local emptyLabel = vgui.Create("DLabel", currentGrid)
+            emptyLabel:SetText("Ингредиенты не загружены")
+            emptyLabel:SetFont("LOTM_SpawnMenu_Small")
+            emptyLabel:SetTextColor(colorTextDim)
+            emptyLabel:SizeToContents()
+            return
+        end
+        
+        local ingredients = {}
+        for ingredientId, data in pairs(LOTM.Ingredients.Registry) do
+            if not categoryId or data.category == categoryId then
+                table.insert(ingredients, {id = ingredientId, data = data})
+            end
+        end
+        
+        table.sort(ingredients, function(a, b)
+            return (a.data.name or "") < (b.data.name or "")
+        end)
+        
+        for _, entry in ipairs(ingredients) do
+            local data = entry.data
+            local rarityColor = (LOTM.Ingredients.RarityColors and LOTM.Ingredients.RarityColors[data.rarity]) or Color(200, 200, 200)
+            local rarityName = (LOTM.Ingredients.RarityNames and LOTM.Ingredients.RarityNames[data.rarity]) or "?"
+            
+            local tooltipText = string.format("[%s] %s\n\n%s\n\nРитуальная сила: %d", 
+                rarityName, data.name or entry.id, data.description or "", data.ritualPower or 0)
+            
+            local card = CreateItemCard(
+                currentGrid,
+                85,
+                data.model or "models/props_junk/garbage_takeoutcarton001a.mdl",
+                data.name or entry.id,
+                rarityColor,
+                data.rarity,
+                function()
+                    RunConsoleCommand("lotm_give_ingredient", LocalPlayer():Name(), entry.id, "1")
+                end,
+                function()
+                    local menu = DermaMenu()
+                    menu:AddOption("Выдать 1", function()
+                        RunConsoleCommand("lotm_give_ingredient", LocalPlayer():Name(), entry.id, "1")
+                    end):SetIcon("icon16/add.png")
+                    menu:AddOption("Выдать 10", function()
+                        RunConsoleCommand("lotm_give_ingredient", LocalPlayer():Name(), entry.id, "10")
+                    end):SetIcon("icon16/add.png")
+                    menu:AddOption("Выдать 50", function()
+                        RunConsoleCommand("lotm_give_ingredient", LocalPlayer():Name(), entry.id, "50")
+                    end):SetIcon("icon16/add.png")
+                    menu:AddSpacer()
+                    menu:AddOption("Копировать ID", function()
+                        SetClipboardText(entry.id)
+                    end):SetIcon("icon16/page_copy.png")
+                    menu:Open()
+                end,
+                tooltipText
+            )
+            
+            currentGrid:Add(card)
+        end
+        
+        contentScroll:GetCanvas():InvalidateLayout(true)
+    end
+    
+    -- =============================================
+    -- ПОСТРОЕНИЕ ДЕРЕВА КАТЕГОРИЙ
+    -- =============================================
+    
+    -- Предметы инвентаря
+    local itemsNode = tree:AddNode("Предметы", "icon16/package.png")
+    itemsNode:SetExpanded(true)
+    
+    for _, cat in ipairs(INVENTORY_CATEGORIES) do
+        local node = itemsNode:AddNode(cat.name, cat.icon)
+        node.DoClick = function()
+            PopulateItems(cat.id, cat.name)
+        end
+    end
+    
+    -- LOTM Артефакты
+    local artifactsNode = tree:AddNode("LOTM Артефакты", "icon16/ruby.png")
+    
+    for _, typeData in ipairs(LOTM_ARTIFACT_TYPES) do
+        local node = artifactsNode:AddNode(typeData.name, typeData.icon)
+        node.DoClick = function()
+            PopulateLOTMArtifacts(typeData.type, "LOTM: " .. typeData.name)
+        end
+    end
+    
+    -- LOTM Ингредиенты
+    local ingredientsNode = tree:AddNode("LOTM Ингредиенты", "icon16/flower_dead.png")
+    
+    local allIngNode = ingredientsNode:AddNode("Все ингредиенты", "icon16/package.png")
+    allIngNode.DoClick = function()
+        PopulateIngredients(nil, "Все ингредиенты")
+    end
+    
+    if LOTM and LOTM.Ingredients and LOTM.Ingredients.CategoryNames then
+        local categoryIcons = {
+            ["plants"] = "icon16/flower_dead.png",
+            ["minerals"] = "icon16/ruby.png",
+            ["blood"] = "icon16/heart.png",
+            ["spiritual"] = "icon16/eye.png",
+            ["materials"] = "icon16/box.png",
+            ["beyonder"] = "icon16/star.png",
+            ["divine"] = "icon16/weather_sun.png",
+        }
+        
+        for catId, catName in pairs(LOTM.Ingredients.CategoryNames) do
+            local node = ingredientsNode:AddNode(catName, categoryIcons[catId] or "icon16/box.png")
+            node.DoClick = function()
+                PopulateIngredients(catId, catName)
+            end
+        end
+    end
+    
+    -- Загружаем предметы по умолчанию
+    timer.Simple(0.1, function()
+        if IsValid(root) then
+            PopulateItems("all", "Все предметы")
+        end
+    end)
+    
+    return root
+end
+
+-- =============================================
+-- РЕГИСТРАЦИЯ ВКЛАДКИ В SPAWN MENU
+-- =============================================
+spawnmenu.AddCreationTab("Предметы", CreateSpawnMenuContent, "icon16/application_view_tile.png", 4)
+
+-- =============================================
+-- КОМАНДА ДЛЯ ПРОСМОТРА КОСТЕЙ ПРОПА
+-- =============================================
 concommand.Add("bones", function()
     local ent = LocalPlayer():GetEyeTrace().Entity
     if not IsValid(ent) then 

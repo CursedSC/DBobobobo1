@@ -1,4 +1,4 @@
--- LOTM F4 Menu Integration
+-- LOTM F4 Menu Integration v3.0
 -- Интеграция LOTM функций в F4 меню в стиле проекта DBT
 
 LOTM = LOTM or {}
@@ -21,7 +21,6 @@ local tableBG = {
     Material("dbt/f4/bg/f4_bg_3.png"),
 }
 
--- Функция отрисовки рамки
 local function draw_border(w, h, color)
     draw.RoundedBox(0, 0, 0, w, 1, color)
     draw.RoundedBox(0, 0, 0, 1, h, color)
@@ -49,7 +48,6 @@ function LOTM.F4.OpenMenu()
     frame:MakePopup()
     LOTM.F4.Frame = frame
     
-    -- Обработка ESC
     frame.OnKeyCodePressed = function(self, key)
         if key == KEY_ESCAPE then
             surface.PlaySound('ui/button_back.mp3')
@@ -59,7 +57,7 @@ function LOTM.F4.OpenMenu()
     end
     
     frame.Paint = function(self, w, h)
-        BlurScreen(24)
+        if BlurScreen then BlurScreen(24) end
         draw.RoundedBox(0, 0, 0, w, h, colorBlack)
         draw.RoundedBox(0, 0, 0, w, h, colorBlack2)
         if dbtPaint and dbtPaint.DrawRect then
@@ -68,51 +66,79 @@ function LOTM.F4.OpenMenu()
         end
         
         -- Заголовок
-        draw.SimpleText("LORD OF THE MYSTERIES", "Comfortaa Bold X60", w / 2, dbtPaint and dbtPaint.HightSource(80) or 80, color_white, TEXT_ALIGN_CENTER)
-        draw.SimpleText("НАСТРОЙКИ СИСТЕМЫ", "Comfortaa Light X30", w / 2, dbtPaint and dbtPaint.HightSource(150) or 150, colorText, TEXT_ALIGN_CENTER)
+        local titleY = dbtPaint and dbtPaint.HightSource(70) or 70
+        local subtitleY = dbtPaint and dbtPaint.HightSource(135) or 135
+        local lineY = dbtPaint and dbtPaint.HightSource(175) or 175
         
-        -- Декоративная линия под заголовком
+        draw.SimpleText("LORD OF THE MYSTERIES", "Comfortaa Bold X60", w / 2, titleY, color_white, TEXT_ALIGN_CENTER)
+        draw.SimpleText("ГЛАВНОЕ МЕНЮ", "Comfortaa Light X28", w / 2, subtitleY, colorText, TEXT_ALIGN_CENTER)
+        
+        -- Декоративная линия
         local lineW = dbtPaint and dbtPaint.WidthSource(400) or 400
-        draw.RoundedBox(0, w / 2 - lineW / 2, dbtPaint and dbtPaint.HightSource(190) or 190, lineW, 2, colorOutLine)
+        draw.RoundedBox(0, w / 2 - lineW / 2, lineY, lineW, 2, colorOutLine)
     end
     
     -- Кнопки меню
     local buttonW = dbtPaint and dbtPaint.WidthSource(416) or 416
-    local buttonH = dbtPaint and dbtPaint.HightSource(64) or 64
-    local startY = dbtPaint and dbtPaint.HightSource(260) or 260
-    local spacing = dbtPaint and dbtPaint.HightSource(77) or 77
+    local buttonH = dbtPaint and dbtPaint.HightSource(60) or 60
+    local startY = dbtPaint and dbtPaint.HightSource(220) or 220
+    local spacing = dbtPaint and dbtPaint.HightSource(70) or 70
     local centerX = scrw / 2 - buttonW / 2
     
     local buttons = {
-        {text = "Предметы LOTM", action = function()
+        {text = "📖 Книга скиллов", action = function()
+            frame:Close()
+            timer.Simple(0.1, function()
+                if LOTM.SkillsMenu and LOTM.SkillsMenu.Open then
+                    LOTM.SkillsMenu.Open()
+                else
+                    RunConsoleCommand("lotm_skills")
+                end
+            end)
+        end},
+        {text = "🗡 Экипировка артефактов", action = function()
+            frame:Close()
+            timer.Simple(0.1, function()
+                if LOTM.ArtifactSlotsUI and LOTM.ArtifactSlotsUI.Open then
+                    LOTM.ArtifactSlotsUI.Open()
+                else
+                    RunConsoleCommand("lotm_artifacts_equip")
+                end
+            end)
+        end},
+        {text = "🧪 Предметы LOTM", action = function()
             frame:Close()
             if LOTM.UnifiedMenu and LOTM.UnifiedMenu.Open then
                 LOTM.UnifiedMenu.Open()
             end
         end},
-        {text = "Способности", action = function()
+        {text = "⌨ Настройка клавиш", action = function()
             frame:Close()
-            if LOTM.AbilityMenu and LOTM.AbilityMenu.Open then
-                LOTM.AbilityMenu.Open()
-            end
+            timer.Simple(0.1, function()
+                if LOTM.Keybinds and LOTM.Keybinds.OpenMenu then
+                    LOTM.Keybinds.OpenMenu()
+                else
+                    RunConsoleCommand("lotm_keybinds")
+                end
+            end)
         end},
-        {text = "Настройка клавиш", action = function()
-            frame:Close()
-            if LOTM.Keybinds and LOTM.Keybinds.OpenMenu then
-                LOTM.Keybinds.OpenMenu()
-            end
-        end},
-        {text = "Настройка камеры", action = function()
+        {text = "📷 Настройка камеры", action = function()
             frame:Close()
             if LOTM.ThirdPerson and LOTM.ThirdPerson.OpenSettings then
                 LOTM.ThirdPerson.OpenSettings()
             end
         end},
-        {text = "Третье лицо [ВКЛ/ВЫКЛ]", action = function()
+        {text = "👁 Третье лицо [ВКЛ/ВЫКЛ]", action = function()
             if LOTM.ThirdPerson and LOTM.ThirdPerson.Toggle then
                 LOTM.ThirdPerson.Toggle()
             end
             frame:Close()
+        end},
+        {text = "💰 Кошелёк", action = function()
+            if LOTM.CurrencyHUD then
+                LOTM.CurrencyHUD.ShowTime = CurTime()
+            end
+            RunConsoleCommand("lotm_wallet")
         end},
     }
     
@@ -134,8 +160,9 @@ function LOTM.F4.OpenMenu()
                 self.ColorBorder.a = Lerp(FrameTime() * 5, self.ColorBorder.a, 0)
             end
             
-            local fontName = dbtPaint and "Comfortaa Light X50" or "DermaLarge"
-            draw.SimpleText(btnData.text, fontName, w * 0.5, dbtPaint and dbtPaint.HightSource(5) or h/2, color_white, TEXT_ALIGN_CENTER, dbtPaint and nil or TEXT_ALIGN_CENTER)
+            local fontName = dbtPaint and "Comfortaa Light X45" or "DermaLarge"
+            local textY = dbtPaint and dbtPaint.HightSource(7) or h/2
+            draw.SimpleText(btnData.text, fontName, w * 0.5, textY, color_white, TEXT_ALIGN_CENTER, dbtPaint and nil or TEXT_ALIGN_CENTER)
         end
         
         button.DoClick = function()
@@ -174,4 +201,4 @@ concommand.Add("+lotm_menu", function()
     LOTM.F4.OpenMenu()
 end)
 
-print("[LOTM] F4 menu integration loaded")
+print("[LOTM] F4 menu integration v3.0 loaded")

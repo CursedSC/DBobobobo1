@@ -3,7 +3,7 @@ local entity = FindMetaTable( "Entity" )
 
 
 MsgC(Color(240, 249, 220), "-----------------------------------------\n")
-MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "Danganronpa Broken Timeline", Color(255, 55, 50), "] ", color_white, "Начата загрузка Gamemode! \n")
+MsgC(Color(255, 55, 50), "[", Color(10, 200, 250), "LOTM: Zero Abyss", Color(255, 55, 50), "] ", color_white, "Начата загрузка Gamemode! \n")
 
 Timestamp = os.time()
 TimeString = os.date( "%X %x" , Timestamp )
